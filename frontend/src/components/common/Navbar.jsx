@@ -27,58 +27,39 @@ const Navbar = () => {
     };
 
     return (
-        <div className="sticky top-0 z-50 bg-white/95 backdrop-blur-md shadow-lg border-b border-orange-100">
+        <div className="sticky top-0 z-50 bg-orange-50 backdrop-blur-md shadow-lg border-b border-orange-100">
             <div className="container mx-auto px-4">
                 <div className="flex items-center justify-between h-16 lg:h-20">
                     {/* Logo and Brand */}
                     <div className="flex items-center gap-3">
                         <Link to="/" className="flex items-center gap-3 group">
-                            <div className="w-10 h-10 lg:w-12 lg:h-12 bg-gradient-to-r from-orange-400 to-red-400 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform duration-200">
-                                <span className="text-xl lg:text-2xl">🍳</span>
-                            </div>
                             <div className="hidden sm:block">
-                                <h1 className="text-xl lg:text-2xl font-bold text-gradient">CookEasy</h1>
-                                <p className="text-xs text-gray-500 hidden lg:block">Delicious Recipes</p>
+                                <h1 className="text-xl lg:text-2xl font-bold bg-gradient-to-r from-orange-700 to-orange-900 bg-clip-text text-transparent">CookEasy</h1>
+                                <p className="text-xs text-orange-900 font-serif hidden lg:block">Simple Recipes</p>
                             </div>
                         </Link>
                     </div>
 
                     {/* Desktop Navigation */}
                     <div className="hidden lg:flex items-center gap-8">
-                        <Link to="/" className="text-gray-700 hover:text-orange-600 font-medium transition-colors duration-200 flex items-center px-3 py-2 rounded-lg hover:bg-orange-50">
-                            <span className="mr-2">🏠</span>
+                        <Link to="/" className="text-orange-700 hover:text-orange-900 hover:underline font-normal font-brand transition-colors duration-200 flex items-center px-3 py-2 rounded-lg hover:bg-orange-50">
+                            <span className="mr-2"></span>
                             Home
                         </Link>
-                        <Link to="/search" className="text-gray-700 hover:text-orange-600 font-medium transition-colors duration-200 flex items-center px-3 py-2 rounded-lg hover:bg-orange-50">
-                            <span className="mr-2">🔍</span>
+                        <Link to="/search" className="text-orange-700 hover:text-orange-900 hover:underline font-normal font-brand transition-colors duration-200 flex items-center px-3 py-2 rounded-lg hover:bg-orange-50">
+                            <span className="mr-2"></span>
                             Browse Recipes
                         </Link>
-                        <Link to="/categories" className="text-gray-700 hover:text-orange-600 font-medium transition-colors duration-200 flex items-center px-3 py-2 rounded-lg hover:bg-orange-50">
-                            <span className="mr-2">🏷️</span>
+                        <Link to="/categories" className="text-orange-700 hover:text-orange-900 hover:underline font-normal  font-brand transition-colors duration-200 flex items-center px-3 py-2 rounded-lg hover:bg-orange-50">
+                            <span className="mr-2"></span>
                             Categories
                         </Link>
                         {isAuthenticated && (
-                            <Link to="/favorites" className="text-gray-700 hover:text-orange-600 font-medium transition-colors duration-200 flex items-center px-3 py-2 rounded-lg hover:bg-orange-50">
+                            <Link to="/favorites" className="text-orange-700 hover:text-orange-900 hover:underline font-normal transition-colors duration-200 flex items-center px-3 py-2 rounded-lg hover:bg-orange-50">
                                 <span className="mr-2">❤️</span>
                                 My Favorites
                             </Link>
                         )}
-                    </div>
-
-                    {/* Search Bar - Desktop */}
-                    <div className="hidden md:flex flex-1 max-w-md mx-8">
-                        <form onSubmit={handleSearch} className="w-full">
-                            <div className="relative">
-                                <input
-                                    type="text"
-                                    placeholder="Search recipes..."
-                                    className="w-full pl-10 pr-4 py-2 rounded-xl border-2 border-gray-200 focus:border-orange-300 focus:outline-none transition-all duration-200"
-                                    value={searchTerm}
-                                    onChange={(e) => setSearchTerm(e.target.value)}
-                                />
-                                <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-                            </div>
-                        </form>
                     </div>
 
                     {/* Desktop Auth Section */}
@@ -100,7 +81,7 @@ const Navbar = () => {
                                                 {user?.username?.charAt(0).toUpperCase() || 'U'}
                                             </span>
                                         </div>
-                                        <span className="font-medium text-gray-700">{user?.username}</span>
+                                        <span className="font-normal text-gray-700">{user?.username}</span>
                                     </button>
 
                                     <div className="absolute right-0 top-full mt-2 w-52 bg-white rounded-xl shadow-xl border opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
@@ -128,12 +109,12 @@ const Navbar = () => {
                             </>
                         ) : (
                             <div className="flex items-center gap-3">
-                                <Link to="/login" className="text-gray-700 hover:text-orange-600 font-medium transition-colors">
+                                <Link to="/login" className="text-orange-700 hover:text-orange-900 hover:underline font-normal transition-colors">
                                     Login
                                 </Link>
                                 <Link
                                     to="/register"
-                                    className="bg-gradient-to-r from-orange-400 to-red-400 text-white px-6 py-2 rounded-xl font-semibold hover:from-orange-500 hover:to-red-500 transition-all duration-200 transform hover:scale-105"
+                                    className="text-orange-700  hover:text-orange-900 px-6 py-2 rounded-xl font-normal hover:underline text-base transition-all duration-200 transform hover:scale-105"
                                 >
                                     Sign Up
                                 </Link>
