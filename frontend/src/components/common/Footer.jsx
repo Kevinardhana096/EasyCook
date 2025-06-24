@@ -1,23 +1,20 @@
 import { Link } from "react-router-dom";
-import {
-  FaEnvelope,
-  FaHeart,
-  FaUser
-} from "react-icons/fa";
+import { FaEnvelope, FaHeart, FaUser } from "react-icons/fa";
 
 const Footer = () => {
   const currentYear = new Date().getFullYear();
 
   return (
-    <footer className="bg-orange-50 text-orange-800 text-sm">
+    <footer className="bg-orange-950 text-orange-200 text-sm">
       <div className="container mx-auto px-4 py-4">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
           {/* Logo & Description */}
           <div>
-            <h3 className="text-lg font-bold bg-gradient-to-r from-orange-700 to-red-900 bg-clip-text text-transparent">
+            <h3 className="text-xl font-bold bg-gradient-to-r from-orange-400 to-orange-700 bg-clip-text text-transparent w-fit">
               CookEasy
             </h3>
-            <p className="mt-1 text-orange-700 text-xs font-serif">
+
+            <p className="mt-1 text-orange-200 text-xs font-serif">
               Simple & delicious recipes made easy.
             </p>
           </div>
@@ -43,7 +40,7 @@ const Footer = () => {
         </div>
 
         {/* Footer Bottom */}
-        <div className="border-t border-orange-200 mt-4 pt-3 text-center text-xs text-orange-600 font-brand">
+        <div className="border-t border-orange-200 mt-4 pt-3 text-center text-xs text-orange-200 font-brand">
           <p className="flex justify-center items-center gap-1">
             &copy; {currentYear} CookEasy. All rights reserved.{" "}
           </p>
