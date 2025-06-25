@@ -13,7 +13,7 @@ class Ingredient(db.Model):
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
     # Relationships
-    recipe_ingredients = db.relationship('RecipeIngredient', back_populates='ingredient', cascade='all, delete-orphan')
+    recipe_ingredients = db.relationship('RecipeIngredient', backref='ingredient', cascade='all, delete-orphan')
     
     def __repr__(self):
         return f'<Ingredient {self.name}>'
@@ -40,9 +40,7 @@ class RecipeIngredient(db.Model):
     notes = db.Column(db.String(200))  # Optional notes like "chopped", "diced", etc.
     order = db.Column(db.Integer, default=0)  # Order in recipe
     
-    # Relationships
-    recipe = db.relationship('Recipe', back_populates='recipe_ingredients')
-    ingredient = db.relationship('Ingredient', back_populates='recipe_ingredients')
+    # Relationships are defined via backref in Recipe and Ingredient models
     
     def __repr__(self):
         return f'<RecipeIngredient {self.quantity} {self.unit} {self.ingredient.name if self.ingredient else "Unknown"}>'

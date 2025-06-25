@@ -1,13 +1,13 @@
 from .user import User
-from .recipe import Recipe, Bookmark
-from .ingredient import Ingredient, RecipeIngredient
+from .recipe import Recipe
 from .category import Category
 from .rating import Rating, RatingHelpful
+from .ingredient import Ingredient, RecipeIngredient
 
 __all__ = [
     'User',
-    'Recipe', 'Bookmark',
-    'Ingredient', 'RecipeIngredient', 
+    'Recipe',
     'Category',
-    'Rating', 'RatingHelpful'
+    'Rating', 'RatingHelpful',
+    'Ingredient', 'RecipeIngredient'
 ]

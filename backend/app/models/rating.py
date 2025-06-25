@@ -17,9 +17,8 @@ class Rating(db.Model):
     # Composite unique constraint - one rating per user per recipe
     __table_args__ = (db.UniqueConstraint('user_id', 'recipe_id', name='unique_user_recipe_rating'),)
     
-    # Relationships
-    user = db.relationship('User', back_populates='ratings')
-    recipe = db.relationship('Recipe', back_populates='ratings')
+    # Relationships are defined via backref in User and Recipe models
+    helpful_votes = db.relationship('RatingHelpful', cascade='all, delete-orphan')
     
     def __repr__(self):
         return f'<Rating {self.rating}/5 by {self.user.username if self.user else "Unknown"} for recipe {self.recipe_id}>'
@@ -81,4 +80,4 @@ class RatingHelpful(db.Model):
     
     # Relationships
     user = db.relationship('User')
-    rating = db.relationship('Rating')
+    # rating relationship will be handled by foreign key
