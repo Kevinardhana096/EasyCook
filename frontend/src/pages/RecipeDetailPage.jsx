@@ -1,23 +1,33 @@
-import { useState, useEffect } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
-import { 
-  FaStar, FaClock, FaUsers, FaHeart, FaBookmark, FaShare, 
-  FaEye, FaThumbsUp, FaUser, FaCalendar, FaPrint, FaArrowLeft 
-} from 'react-icons/fa';
-import { useAuth } from '../contexts/AuthContext';
-import LoadingSpinner from '../components/common/LoadingSpinner';
-import apiClient from '../api/client';
+import { useState, useEffect } from "react";
+import { useParams, useNavigate, Link } from "react-router-dom";
+import {
+  FaStar,
+  FaClock,
+  FaUsers,
+  FaHeart,
+  FaBookmark,
+  FaShare,
+  FaEye,
+  FaThumbsUp,
+  FaUser,
+  FaCalendar,
+  FaPrint,
+  FaArrowLeft,
+} from "react-icons/fa";
+import { useAuth } from "../contexts/AuthContext";
+import LoadingSpinner from "../components/common/LoadingSpinner";
+import apiClient from "../api/client";
 
 const RecipeDetailPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { user, isAuthenticated } = useAuth();
-  
+
   const [recipe, setRecipe] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [isBookmarked, setIsBookmarked] = useState(false);
-  const [activeTab, setActiveTab] = useState('instructions');
+  const [activeTab, setActiveTab] = useState("instructions");
 
   useEffect(() => {
     loadRecipe();
@@ -26,19 +36,19 @@ const RecipeDetailPage = () => {
   const loadRecipe = async () => {
     setLoading(true);
     setError(null);
-    
+
     try {
       const response = await apiClient.get(`/recipes/${id}`);
       setRecipe(response.data.recipe);
-      
+
       // Check if bookmarked (if user is logged in)
       if (isAuthenticated) {
         // This would be implemented when bookmark API is ready
         setIsBookmarked(false);
       }
     } catch (err) {
-      setError('Recipe not found or failed to load');
-      console.error('Recipe load error:', err);
+      setError("Recipe not found or failed to load");
+      console.error("Recipe load error:", err);
     } finally {
       setLoading(false);
     }
@@ -46,7 +56,7 @@ const RecipeDetailPage = () => {
 
   const handleBookmark = async () => {
     if (!isAuthenticated) {
-      navigate('/login');
+      navigate("/login");
       return;
     }
 
@@ -54,9 +64,9 @@ const RecipeDetailPage = () => {
       // Placeholder for bookmark API call
       setIsBookmarked(!isBookmarked);
       // await apiClient.post(`/recipes/${id}/bookmark`);
-      console.log('Bookmark toggled');
+      console.log("Bookmark toggled");
     } catch (err) {
-      console.error('Bookmark error:', err);
+      console.error("Bookmark error:", err);
     }
   };
 
@@ -70,7 +80,7 @@ const RecipeDetailPage = () => {
     } else {
       // Fallback: copy to clipboard
       navigator.clipboard.writeText(window.location.href);
-      alert('Recipe link copied to clipboard!');
+      alert("Recipe link copied to clipboard!");
     }
   };
 
@@ -108,146 +118,176 @@ const RecipeDetailPage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-base-100">
-      {/* Recipe Header */}
-      <div className="relative">
-        {/* Hero Image */}
-        <div className="h-96 bg-gradient-to-r from-primary/20 to-secondary/20 relative overflow-hidden">
-          {recipe.image_url ? (
-            <img
-              src={recipe.image_url}
-              alt={recipe.title}
-              className="w-full h-full object-cover"
-              onError={(e) => {
-                e.target.style.display = 'none';
-              }}
-            />
-          ) : (
-            <div className="w-full h-full flex items-center justify-center text-6xl">
-              🍳
-            </div>
-          )}
-          
-          {/* Overlay */}
-          <div className="absolute inset-0 bg-black/40"></div>
-          
-          {/* Back Button */}
-          <button
-            onClick={() => navigate(-1)}
-            className="absolute top-6 left-6 btn btn-circle btn-ghost bg-white/20 backdrop-blur text-white hover:bg-white/30"
-          >
-            <FaArrowLeft />
-          </button>
-          
-          {/* Action Buttons */}
-          <div className="absolute top-6 right-6 flex gap-2">
+    <div className="min-h-screen bg-orange-50 px-4 py-10">
+      <div className="min-h-screen bg-orange-50 px-4 py-10">
+        <div className="max-w-7xl mx-auto">
+          {/* Top Navigation */}
+          <div className="mb-6 flex justify-between items-center">
             <button
-              onClick={handleShare}
-              className="btn btn-circle btn-ghost bg-white/20 backdrop-blur text-white hover:bg-white/30"
+              onClick={() => navigate(-1)}
+              className="btn btn-circle bg-orange-100 shadow-md hover:shadow-lg text-orange-700 hover:text-orange-900 border-0"
             >
-              <FaShare />
+              <FaArrowLeft className="text-lg" />
             </button>
-            <button
-              onClick={handlePrint}
-              className="btn btn-circle btn-ghost bg-white/20 backdrop-blur text-white hover:bg-white/30"
-            >
-              <FaPrint />
-            </button>
-            <button
-              onClick={handleBookmark}
-              className={`btn btn-circle ${isBookmarked ? 'btn-primary' : 'btn-ghost bg-white/20 backdrop-blur text-white hover:bg-white/30'}`}
-            >
-              <FaBookmark />
-            </button>
-          </div>
-        </div>
 
-        {/* Recipe Info Card */}
-        <div className="container mx-auto px-4 -mt-20 relative z-10">
-          <div className="bg-white rounded-2xl shadow-xl p-8 max-w-4xl mx-auto">
-            <div className="flex flex-col lg:flex-row lg:items-start gap-6">
-              <div className="flex-grow">
-                <h1 className="text-3xl lg:text-4xl font-bold mb-4">{recipe.title}</h1>
-                <p className="text-gray-600 text-lg mb-6">{recipe.description}</p>
-                
-                {/* Recipe Meta */}
-                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-                  <div className="stat">
-                    <div className="stat-figure text-primary">
-                      <FaClock />
-                    </div>
-                    <div className="stat-title">Total Time</div>
-                    <div className="stat-value text-lg">{recipe.total_time || 'N/A'}m</div>
+            <div className="flex gap-3">
+              <button
+                onClick={handleShare}
+                className="btn btn-circle bg-orange-100 shadow-md hover:shadow-lg text-orange-700 hover:text-orange-900 border-0"
+              >
+                <FaShare className="text-lg" />
+              </button>
+              <button
+                onClick={handlePrint}
+                className="btn btn-circle bg-orange-100 shadow-md hover:shadow-lg text-orange-700 hover:text-orange-900 border-0"
+              >
+                <FaPrint className="text-lg" />
+              </button>
+              <button
+                onClick={handleBookmark}
+                className={`btn btn-circle shadow-md hover:shadow-lg border-0 ${
+                  isBookmarked
+                    ? "bg-orange-200 text-orange-50 hover:bg-orange-focus"
+                    : "bg-orange-100 text-orange-700 hover:text-orange-900"
+                }`}
+              >
+                <FaBookmark className="text-lg" />
+              </button>
+            </div>
+          </div>
+
+          {/* Main Grid */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+            {/* LEFT: Gambar + Recipe by */}
+            <div className="lg:col-span-5 space-y-4">
+              {/* Image */}
+              <div className="relative h-80 lg:h-96 rounded-2xl overflow-hidden shadow-lg">
+                {recipe.image_url ? (
+                  <img
+                    src={recipe.image_url}
+                    alt={recipe.title}
+                    className="w-full h-full object-cover"
+                    onError={(e) => (e.target.style.display = "none")}
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center text-8xl bg-gradient-to-br from-orange-100 to-orange-200">
+                    🍳
                   </div>
-                  
-                  <div className="stat">
-                    <div className="stat-figure text-secondary">
-                      <FaUsers />
-                    </div>
-                    <div className="stat-title">Servings</div>
-                    <div className="stat-value text-lg">{recipe.servings || 1}</div>
-                  </div>
-                  
-                  <div className="stat">
-                    <div className="stat-figure text-accent">
-                      <FaStar />
-                    </div>
-                    <div className="stat-title">Rating</div>
-                    <div className="stat-value text-lg">{recipe.average_rating || 'N/A'}</div>
-                  </div>
-                  
-                  <div className="stat">
-                    <div className="stat-figure text-info">
-                      <FaEye />
-                    </div>
-                    <div className="stat-title">Views</div>
-                    <div className="stat-value text-lg">{recipe.view_count || 0}</div>
-                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* RIGHT: Recipe Info */}
+            <div className="lg:col-span-7 space-y-6">
+              {/* Title + Description + Tags */}
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-3">
+                <h1 className="text-3xl lg:text-4xl font-bold text-gray-800 leading-tight">
+                  {recipe.title}
+                </h1>
+                <p className="text-gray-500 text-sm flex items-center">
+                  <FaCalendar className="mr-2" />
+                  {new Date(recipe.created_at).toLocaleDateString("en-US", {
+                    year: "numeric",
+                    month: "long",
+                    day: "numeric",
+                  })}
+                </p>
+              </div>
+
+              <p className="text-gray-600 text-lg leading-relaxed mb-4">
+                {recipe.description}
+              </p>
+
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 flex-wrap">
+                {/* Tags */}
+                <div className="flex flex-wrap items-center gap-3">
+                  <span
+                    className={`px-4 py-2 rounded-full text-sm font-medium ${
+                      recipe.difficulty === "Easy"
+                        ? "bg-green-100 text-green-700"
+                        : recipe.difficulty === "Medium"
+                        ? "bg-yellow-100 text-yellow-700"
+                        : "bg-red-100 text-red-700"
+                    }`}
+                  >
+                    {recipe.difficulty || "Medium"}
+                  </span>
+
+                  {recipe.category && (
+                    <span className="px-4 py-2 rounded-full text-sm font-medium bg-gray-100 text-gray-700 border border-gray-200">
+                      {recipe.category.icon} {recipe.category.name}
+                    </span>
+                  )}
                 </div>
 
-                {/* Difficulty Badge */}
-                <div className="flex items-center gap-4 mb-6">
-                  <div className={`badge badge-lg ${
-                    recipe.difficulty === 'Easy' ? 'badge-success' :
-                    recipe.difficulty === 'Medium' ? 'badge-warning' : 'badge-error'
-                  }`}>
-                    {recipe.difficulty || 'Medium'}
-                  </div>
-                  
-                  {recipe.category && (
-                    <div className="badge badge-lg badge-outline">
-                      {recipe.category.icon} {recipe.category.name}
-                    </div>
-                  )}
+                {/* Author - kanan */}
+                <div className="flex items-center gap-2 mt-1 sm:mt-0 ml-auto">
+                  <p className="text-sm text-gray-500 font-medium">
+                    By:{" "}
+                    <span className="text-gray-800 font-semibold">
+                      {recipe.user?.username || "Unknown Chef"}
+                    </span>
+                  </p>
                 </div>
               </div>
 
-              {/* Author Info */}
-              <div className="lg:w-80">
-                <div className="card bg-base-200">
-                  <div className="card-body">
-                    <h3 className="card-title text-lg">Recipe by</h3>
-                    <div className="flex items-center gap-3">
-                      <div className="avatar">
-                        <div className="w-12 rounded-full">
-                          <img
-                            src={recipe.user?.profile_image || `https://ui-avatars.com/api/?name=${recipe.user?.username}&background=FF6B35&color=ffffff`}
-                            alt={recipe.user?.username}
-                          />
-                        </div>
-                      </div>
-                      <div>
-                        <p className="font-semibold">{recipe.user?.username || 'Unknown Chef'}</p>
-                        <p className="text-sm text-gray-500 flex items-center">
-                          <FaCalendar className="mr-1" />
-                          {new Date(recipe.created_at).toLocaleDateString()}
-                        </p>
-                      </div>
+              {/* Stats */}
+              <div className="bg-white rounded-2xl p-6 shadow-lg">
+                <h3 className="text-lg font-semibold text-gray-800 mb-4">
+                  Recipe Details
+                </h3>
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-orange-100 rounded-full flex items-center justify-center">
+                      <FaClock className="text-orange-600" />
                     </div>
-                    
-                    {recipe.user?.bio && (
-                      <p className="text-sm text-gray-600 mt-2">{recipe.user.bio}</p>
-                    )}
+                    <div>
+                      <p className="text-xs text-gray-500 uppercase tracking-wide">
+                        Time
+                      </p>
+                      <p className="font-semibold text-gray-800">
+                        {recipe.total_time || "N/A"}m
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                      <FaUsers className="text-blue-600" />
+                    </div>
+                    <div>
+                      <p className="text-xs text-gray-500 uppercase tracking-wide">
+                        Serves
+                      </p>
+                      <p className="font-semibold text-gray-800">
+                        {recipe.servings || 1}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-yellow-100 rounded-full flex items-center justify-center">
+                      <FaStar className="text-yellow-600" />
+                    </div>
+                    <div>
+                      <p className="text-xs text-gray-500 uppercase tracking-wide">
+                        Rating
+                      </p>
+                      <p className="font-semibold text-gray-800">
+                        {recipe.average_rating || "N/A"}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
+                      <FaEye className="text-green-600" />
+                    </div>
+                    <div>
+                      <p className="text-xs text-gray-500 uppercase tracking-wide">
+                        Views
+                      </p>
+                      <p className="font-semibold text-gray-800">
+                        {recipe.view_count || 0}
+                      </p>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -256,106 +296,121 @@ const RecipeDetailPage = () => {
         </div>
       </div>
 
-      {/* Recipe Content */}
-      <div className="container mx-auto px-4 py-8">
-        <div className="max-w-4xl mx-auto">
-          {/* Tabs */}
-          <div className="tabs tabs-boxed mb-8">
-            <button
-              className={`tab ${activeTab === 'instructions' ? 'tab-active' : ''}`}
-              onClick={() => setActiveTab('instructions')}
-            >
-              Instructions
-            </button>
-            <button
-              className={`tab ${activeTab === 'ingredients' ? 'tab-active' : ''}`}
-              onClick={() => setActiveTab('ingredients')}
-            >
-              Ingredients
-            </button>
-            <button
-              className={`tab ${activeTab === 'nutrition' ? 'tab-active' : ''}`}
-              onClick={() => setActiveTab('nutrition')}
-            >
-              Nutrition
-            </button>
-          </div>
+      {/* Tabs Section */}
+      <div className="max-w-4xl mx-auto mt-12">
+        <div className="tabs tabs-boxed justify-center mb-6">
+          <button
+            className={`tab ${
+              activeTab === "instructions" ? "tab-active" : ""
+            }`}
+            onClick={() => setActiveTab("instructions")}
+          >
+            Instructions
+          </button>
+          <button
+            className={`tab ${activeTab === "ingredients" ? "tab-active" : ""}`}
+            onClick={() => setActiveTab("ingredients")}
+          >
+            Ingredients
+          </button>
+          <button
+            className={`tab ${activeTab === "nutrition" ? "tab-active" : ""}`}
+            onClick={() => setActiveTab("nutrition")}
+          >
+            Nutrition
+          </button>
+        </div>
 
-          {/* Tab Content */}
-          <div className="bg-white rounded-xl shadow-lg p-8">
-            {activeTab === 'instructions' && (
-              <div>
-                <h2 className="text-2xl font-bold mb-6">Cooking Instructions</h2>
-                <div className="prose max-w-none">
-                  <div className="whitespace-pre-line text-gray-700 leading-relaxed">
-                    {recipe.instructions}
-                  </div>
-                </div>
-                
-                {recipe.tips && (
-                  <div className="mt-8 p-6 bg-yellow-50 rounded-lg border-l-4 border-yellow-400">
-                    <h3 className="font-semibold text-yellow-800 mb-2">💡 Chef's Tips</h3>
-                    <p className="text-yellow-700">{recipe.tips}</p>
-                  </div>
-                )}
+        <div className="bg-white rounded-xl shadow-md p-6">
+          {activeTab === "instructions" && (
+            <>
+              <h2 className="text-2xl font-bold mb-4">Cooking Instructions</h2>
+              <div className="whitespace-pre-line text-gray-700 leading-relaxed">
+                {recipe.instructions}
               </div>
-            )}
-
-            {activeTab === 'ingredients' && (
-              <div>
-                <h2 className="text-2xl font-bold mb-6">Ingredients</h2>
-                {recipe.ingredients && recipe.ingredients.length > 0 ? (
-                  <ul className="space-y-3">
-                    {recipe.ingredients.map((ingredient, index) => (
-                      <li key={index} className="flex items-center gap-3 p-3 bg-base-200 rounded-lg">
-                        <div className="w-6 h-6 bg-primary text-white rounded-full flex items-center justify-center text-sm font-bold">
-                          {index + 1}
-                        </div>
-                        <span className="font-medium">{ingredient.quantity} {ingredient.unit}</span>
-                        <span className="text-gray-600">{ingredient.ingredient_name}</span>
-                        {ingredient.notes && (
-                          <span className="text-sm text-gray-500 italic">({ingredient.notes})</span>
-                        )}
-                      </li>
-                    ))}
-                  </ul>
-                ) : (
-                  <p className="text-gray-500 italic">Ingredients list not available</p>
-                )}
-              </div>
-            )}
-
-            {activeTab === 'nutrition' && (
-              <div>
-                <h2 className="text-2xl font-bold mb-6">Nutritional Information</h2>
-                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                  <div className="stat">
-                    <div className="stat-title">Calories</div>
-                    <div className="stat-value text-primary">{recipe.calories_per_serving || 'N/A'}</div>
-                    <div className="stat-desc">per serving</div>
-                  </div>
-                  <div className="stat">
-                    <div className="stat-title">Protein</div>
-                    <div className="stat-value text-secondary">{recipe.protein || 'N/A'}g</div>
-                  </div>
-                  <div className="stat">
-                    <div className="stat-title">Carbs</div>
-                    <div className="stat-value text-accent">{recipe.carbs || 'N/A'}g</div>
-                  </div>
-                  <div className="stat">
-                    <div className="stat-title">Fat</div>
-                    <div className="stat-value text-warning">{recipe.fat || 'N/A'}g</div>
-                  </div>
+              {recipe.tips && (
+                <div className="mt-6 bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded-lg">
+                  <h3 className="font-semibold text-yellow-800 mb-1">
+                    💡 Chef's Tips
+                  </h3>
+                  <p className="text-yellow-700">{recipe.tips}</p>
                 </div>
-                
-                <div className="mt-6 p-4 bg-info/10 rounded-lg">
-                  <p className="text-sm text-info">
-                    ℹ️ Nutritional values are approximate and may vary based on specific ingredients and preparation methods.
+              )}
+            </>
+          )}
+
+          {activeTab === "ingredients" && (
+            <>
+              <h2 className="text-2xl font-bold mb-4">Ingredients</h2>
+              {recipe.ingredients?.length > 0 ? (
+                <ul className="space-y-2">
+                  {recipe.ingredients.map((item, index) => (
+                    <li
+                      key={index}
+                      className="flex items-center gap-3 bg-base-200 px-4 py-2 rounded-lg"
+                    >
+                      <div className="w-6 h-6 flex items-center justify-center bg-primary text-white text-xs font-bold rounded-full">
+                        {index + 1}
+                      </div>
+                      <span className="font-medium">
+                        {item.quantity} {item.unit}
+                      </span>
+                      <span className="text-gray-600">
+                        {item.ingredient_name}
+                      </span>
+                      {item.notes && (
+                        <span className="text-sm text-gray-500 italic">
+                          ({item.notes})
+                        </span>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="text-gray-500 italic">
+                  Ingredients list not available.
+                </p>
+              )}
+            </>
+          )}
+
+          {activeTab === "nutrition" && (
+            <>
+              <h2 className="text-2xl font-bold mb-4">
+                Nutritional Information
+              </h2>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-center">
+                <div>
+                  <p className="text-sm text-gray-500">Calories</p>
+                  <p className="text-lg text-primary font-semibold">
+                    {recipe.calories_per_serving || "N/A"}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-500">Protein</p>
+                  <p className="text-lg text-secondary font-semibold">
+                    {recipe.protein || "N/A"}g
+                  </p>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-500">Carbs</p>
+                  <p className="text-lg text-accent font-semibold">
+                    {recipe.carbs || "N/A"}g
+                  </p>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-500">Fat</p>
+                  <p className="text-lg text-warning font-semibold">
+                    {recipe.fat || "N/A"}g
                   </p>
                 </div>
               </div>
-            )}
-          </div>
+              <p className="text-sm text-info bg-info/10 rounded-md p-3 mt-6">
+                ℹ️ Nutritional values are estimated and may vary based on
+                ingredients used.
+              </p>
+            </>
+          )}
         </div>
       </div>
     </div>
