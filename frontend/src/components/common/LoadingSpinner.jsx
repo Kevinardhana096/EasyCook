@@ -7,9 +7,9 @@ const LoadingSpinner = ({ size = "md", text = "Loading...", className = "" }) =>
   };
 
   return (
-    <div className={`flex flex-col items-center justify-center p-8 ${className}`}>
-      <div className={`${sizeClasses[size]} animate-spin rounded-full border-4 border-primary border-t-transparent mb-4`}></div>
-      {text && <p className="text-sm text-gray-600 animate-pulse">{text}</p>}
+    <div className={`bg-orange-50 flex flex-col items-center justify-center p-8 ${className}`}>
+      <div className={`${sizeClasses[size]} animate-spin rounded-full border-4 border-orange-800 border-t-transparent mb-4`}></div>
+      {text && <p className="text-sm text-orange-800 animate-pulse">{text}</p>}
     </div>
   );
 };
