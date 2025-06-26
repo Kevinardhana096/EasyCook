@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { FaStar, FaClock, FaHeart, FaUser, FaEye } from 'react-icons/fa';
+import FavoriteButton from './FavoriteButton';
 
 const RecipeCard = ({ recipe, showAuthor = true, className = "" }) => {
   const {
@@ -29,13 +30,6 @@ const RecipeCard = ({ recipe, showAuthor = true, className = "" }) => {
     }
   };
 
-  const handleFavoriteClick = (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    // TODO: Implement favorite functionality
-    console.log('Toggle favorite for recipe:', id);
-  };
-
   return (
     <div className={`card bg-base-100 shadow-xl card-hover ${className}`}>
       <figure className="relative">
@@ -47,16 +41,19 @@ const RecipeCard = ({ recipe, showAuthor = true, className = "" }) => {
             e.target.src = 'https://via.placeholder.com/400x300/FF6B35/ffffff?text=CookEasy';
           }}
         />
-        
+
         {/* Favorite button */}
-        <button
-          onClick={handleFavoriteClick}
-          className={`absolute top-4 right-4 btn btn-circle btn-sm ${
-            isFavorited ? 'btn-primary' : 'btn-ghost bg-white/90 hover:btn-primary'
-          }`}
-        >
-          <FaHeart className={isFavorited ? 'text-white' : 'text-gray-600'} />
-        </button>
+        <div className="absolute top-4 right-4">
+          <FavoriteButton
+            recipeId={id}
+            initialFavorited={isFavorited}
+            size="md"
+            onToggle={(recipeId, newFavoritedState) => {
+              console.log('Toggle favorite for recipe:', recipeId, newFavoritedState);
+              // TODO: Update parent state or call API
+            }}
+          />
+        </div>
 
         {/* Cook time badge */}
         {cookTime && (
@@ -76,9 +73,9 @@ const RecipeCard = ({ recipe, showAuthor = true, className = "" }) => {
         <h3 className="card-title text-lg line-clamp-2">
           {title}
         </h3>
-        
+
         <p className="text-gray-600 line-clamp-2 text-sm">{description}</p>
-        
+
         {/* Rating and author */}
         <div className="flex items-center justify-between mt-4">
           <div className="flex items-center space-x-4">
@@ -88,7 +85,7 @@ const RecipeCard = ({ recipe, showAuthor = true, className = "" }) => {
                 <span className="text-sm font-medium">{rating.toFixed(1)}</span>
               </div>
             )}
-            
+
             {showAuthor && author && (
               <div className="flex items-center text-gray-500">
                 <FaUser className="mr-1 text-xs" />
@@ -113,7 +110,7 @@ const RecipeCard = ({ recipe, showAuthor = true, className = "" }) => {
             )}
           </div>
         </div>
-        
+
         <div className="card-actions justify-end mt-4">
           <Link to={`/recipes/${id}`} className="btn btn-primary btn-sm">
             View Recipe

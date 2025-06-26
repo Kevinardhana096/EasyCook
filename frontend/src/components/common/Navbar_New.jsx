@@ -211,6 +211,10 @@ const Navbar = () => {
                                             <FaUser className="mr-3 text-orange-500" />
                                             Profile
                                         </Link>
+                                        <Link to="/settings" onClick={() => setIsMenuOpen(false)} className="mobile-nav-link">
+                                            <FaCog className="mr-3 text-gray-500" />
+                                            Settings
+                                        </Link>
                                         <button onClick={() => { handleLogout(); setIsMenuOpen(false); }} className="mobile-nav-link text-red-600 w-full text-left">
                                             <FaSignOutAlt className="mr-3" />
                                             Logout
