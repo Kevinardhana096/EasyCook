@@ -1,15 +1,28 @@
-import { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { useForm } from 'react-hook-form';
-import { FaEye, FaEyeSlash, FaUser, FaEnvelope, FaLock, FaGoogle, FaFacebook } from 'react-icons/fa';
-import { useAuth } from '../contexts/AuthContext';
-import LoadingSpinner from '../components/common/LoadingSpinner';
+import { useState, useEffect } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { useForm } from "react-hook-form";
+import {
+  FaEye,
+  FaEyeSlash,
+  FaUser,
+  FaEnvelope,
+  FaLock,
+  FaGoogle,
+  FaFacebook,
+} from "react-icons/fa";
+import { useAuth } from "../contexts/AuthContext";
+import LoadingSpinner from "../components/common/LoadingSpinner";
 
 const RegisterPage = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { register: registerUser, isAuthenticated, error, clearError } = useAuth();
+  const {
+    register: registerUser,
+    isAuthenticated,
+    error,
+    clearError,
+  } = useAuth();
   const navigate = useNavigate();
 
   const {
@@ -17,16 +30,16 @@ const RegisterPage = () => {
     handleSubmit,
     formState: { errors },
     setError: setFormError,
-    watch
+    watch,
   } = useForm();
 
   // Watch password for confirmation validation
-  const password = watch('password');
+  const password = watch("password");
 
   // Redirect if already authenticated
   useEffect(() => {
     if (isAuthenticated) {
-      navigate('/', { replace: true });
+      navigate("/", { replace: true });
     }
   }, [isAuthenticated, navigate]);
 
@@ -44,242 +57,365 @@ const RegisterPage = () => {
         username: data.username,
         email: data.email,
         password: data.password,
-        role: 'user', // Default role
-        bio: ''
+        role: "user", // Default role
+        bio: "",
       };
 
       const result = await registerUser(userData);
-      
+
       if (result.success) {
         // Success - user will be redirected by useEffect
-        navigate('/');
+        navigate("/");
       } else {
-        setFormError('root', { message: result.message });
+        setFormError("root", { message: result.message });
       }
     } catch (err) {
-      setFormError('root', { message: 'An unexpected error occurred' });
+      setFormError("root", { message: "An unexpected error occurred" });
     } finally {
       setIsSubmitting(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary/5 via-secondary/5 to-accent/5 flex items-center justify-center px-4 py-12">
-      <div className="max-w-md w-full">
-        {/* Header */}
-        <div className="text-center mb-8">
-          <Link to="/" className="inline-block">
-            <h1 className="text-4xl font-brand font-bold text-gradient mb-2">
-              🍳 CookEasy
-            </h1>
-          </Link>
-          <h2 className="text-2xl font-semibold text-gray-900 mb-2">Join CookEasy!</h2>
-          <p className="text-gray-600">Create your account and start sharing amazing recipes</p>
-        </div>
-
-        {/* Register Form */}
-        <div className="bg-white rounded-2xl shadow-xl p-8">
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-            {/* Error Alert */}
-            {(error || errors.root) && (
-              <div className="alert alert-error">
-                <div>
-                  <span>{error || errors.root?.message}</span>
-                </div>
-              </div>
-            )}
-
-            {/* Username Field */}
-            <div className="form-control">
-              <label className="label">
-                <span className="label-text font-medium">Username</span>
-              </label>
-              <div className="relative">
-                <input
-                  type="text"
-                  placeholder="nowriafisda"
-                  className={`input input-bordered w-full pl-12 ${errors.username ? 'input-error' : 'focus:ring-2 focus:ring-primary'}`}
-                  {...register('username', {
-                    required: 'Username is required',
-                    minLength: {
-                      value: 3,
-                      message: 'Username must be at least 3 characters'
-                    },
-                    pattern: {
-                      value: /^[a-zA-Z0-9_]+$/,
-                      message: 'Username can only contain letters, numbers, and underscores'
-                    }
-                  })}
-                />
-                <FaUser className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400" />
-              </div>
-              {errors.username && (
-                <label className="label">
-                  <span className="label-text-alt text-error">{errors.username.message}</span>
-                </label>
-              )}
-            </div>
-
-            {/* Email Field */}
-            <div className="form-control">
-              <label className="label">
-                <span className="label-text font-medium">Email Address</span>
-              </label>
-              <div className="relative">
-                <input
-                  type="email"HH
-                  placeholder="nowriafisda@cookeasy.com"
-                  className={`input input-bordered w-full pl-12 ${errors.email ? 'input-error' : 'focus:ring-2 focus:ring-primary'}`}
-                  {...register('email', {
-                    required: 'Email is required',
-                    pattern: {
-                      value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
-                      message: 'Invalid email address'
-                    }
-                  })}
-                />
-                <FaEnvelope className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400" />
-              </div>
-              {errors.email && (
-                <label className="label">
-                  <span className="label-text-alt text-error">{errors.email.message}</span>
-                </label>
-              )}
-            </div>
-
-            {/* Password Field */}
-            <div className="form-control">
-              <label className="label">
-                <span className="label-text font-medium">Password</span>
-              </label>
-              <div className="relative">
-                <input
-                  type={showPassword ? 'text' : 'password'}
-                  placeholder="Create a strong password"
-                  className={`input input-bordered w-full pl-12 pr-12 ${errors.password ? 'input-error' : 'focus:ring-2 focus:ring-primary'}`}
-                  {...register('password', {
-                    required: 'Password is required',
-                    minLength: {
-                      value: 6,
-                      message: 'Password must be at least 6 characters'
-                    }
-                  })}
-                />
-                <FaLock className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400" />
-                <button
-                  type="button"
-                  className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                  onClick={() => setShowPassword(!showPassword)}
-                >
-                  {showPassword ? <FaEyeSlash /> : <FaEye />}
-                </button>
-              </div>
-              {errors.password && (
-                <label className="label">
-                  <span className="label-text-alt text-error">{errors.password.message}</span>
-                </label>
-              )}
-            </div>
-
-            {/* Confirm Password Field */}
-            <div className="form-control">
-              <label className="label">
-                <span className="label-text font-medium">Confirm Password</span>
-              </label>
-              <div className="relative">
-                <input
-                  type={showConfirmPassword ? 'text' : 'password'}
-                  placeholder="Confirm your password"
-                  className={`input input-bordered w-full pl-12 pr-12 ${errors.confirmPassword ? 'input-error' : 'focus:ring-2 focus:ring-primary'}`}
-                  {...register('confirmPassword', {
-                    required: 'Please confirm your password',
-                    validate: value => value === password || 'Passwords do not match'
-                  })}
-                />
-                <FaLock className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400" />
-                <button
-                  type="button"
-                  className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                >
-                  {showConfirmPassword ? <FaEyeSlash /> : <FaEye />}
-                </button>
-              </div>
-              {errors.confirmPassword && (
-                <label className="label">
-                  <span className="label-text-alt text-error">{errors.confirmPassword.message}</span>
-                </label>
-              )}
-            </div>
-
-            {/* Terms Agreement */}
-            <div className="form-control">
-              <label className="label cursor-pointer justify-start">
-                <input 
-                  type="checkbox" 
-                  className="checkbox checkbox-primary checkbox-sm mr-3"
-                  {...register('terms', {
-                    required: 'You must agree to the terms and conditions'
-                  })}
-                />
-                <span className="label-text">
-                  I agree to the{' '}
-                  <Link to="/terms" className="link link-primary">Terms of Service</Link>
-                  {' '}and{' '}
-                  <Link to="/privacy" className="link link-primary">Privacy Policy</Link>
-                </span>
-              </label>
-              {errors.terms && (
-                <label className="label">
-                  <span className="label-text-alt text-error">{errors.terms.message}</span>
-                </label>
-              )}
-            </div>
-
-            {/* Submit Button */}
-            <button
-              type="submit"
-              disabled={isSubmitting}
-              className="btn btn-primary w-full"
-            >
-              {isSubmitting ? (
-                <LoadingSpinner size="sm" text="" />
-              ) : (
-                'Create Account'
-              )}
-            </button>
-          </form>
-
-          {/* Social Login */}
-          <div className="divider my-6">Or continue with</div>
-          <div className="grid grid-cols-2 gap-4">
-            <button className="btn btn-outline btn-sm">
-              <FaGoogle className="mr-2" />
-              Google
-            </button>
-            <button className="btn btn-outline btn-sm">
-              <FaFacebook className="mr-2" />
-              Facebook
-            </button>
-          </div>
-
-          {/* Sign In Link */}
-          <div className="text-center mt-6">
-            <p className="text-gray-600">
-              Already have an account?{' '}
-              <Link to="/login" className="link link-primary font-medium">
-                Sign in here
-              </Link>
+    <div
+      className="min-h-screen bg-cover bg-center relative overflow-hidden"
+      style={{ backgroundImage: "url('/images/web.png')" }}
+    >
+      <div className="relative z-10 flex items-center justify-center min-h-screen px-4 py-8">
+        <div className="max-w-lg w-full">
+          {/* Header */}
+          <div className="text-center mb-8">
+            <Link to="/" className="inline-block group"></Link>
+            <h2 className="text-5xl text-orange-50 font-serif font-semibold mb-2">
+              Register Now!
+            </h2>
+            <p className="text-orange-50 text-base font-brand font-normal">
+              Create your account and start sharing amazing recipes
             </p>
           </div>
-        </div>
 
-        {/* Welcome Message */}
-        <div className="mt-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
-          <p className="text-sm text-blue-800 text-center">
-            Welcome to CookEasy, nowriafisda! 🎉<br />
-            Join our community of passionate cooks today!
-          </p>
+          {/* Main Register Card */}
+          <div className="backdrop-blur-lg rounded-3xl shadow-2xl p-10 hover:shadow-3xl transition-all duration-300">
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+              {/* Error Alert */}
+              {(error || errors.root) && (
+                <div className="bg-red-50 border-l-4 border-red-400 p-4 rounded-r-lg">
+                  <div className="flex items-center">
+                    <div className="flex-shrink-0">
+                      <svg
+                        className="h-5 w-5 text-red-400"
+                        viewBox="0 0 20 20"
+                        fill="currentColor"
+                      >
+                        <path
+                          fillRule="evenodd"
+                          d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+                          clipRule="evenodd"
+                        />
+                      </svg>
+                    </div>
+                    <div className="ml-3">
+                      <p className="text-sm text-red-700 font-medium">
+                        {error || errors.root?.message}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Username Field */}
+              <div className="space-y-2">
+                <label className="block text-sm font-normal font-brand text-orange-600">
+                  Username
+                </label>
+                <div className="relative group">
+                  <input
+                    type="text"
+                    placeholder="nowriafisda"
+                    className={`w-full px-12 py-3 font-brand text-black placeholder-gray-400 bg-gray-50 border rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-700 focus:border-transparent transition-all duration-300 group-hover:bg-white ${
+                      errors.username
+                        ? "border-red-500 bg-red-50"
+                        : "border-gray-200 focus:bg-white"
+                    }`}
+                    {...register("username", {
+                      required: "Username is required",
+                      minLength: {
+                        value: 3,
+                        message: "Username must be at least 3 characters",
+                      },
+                      pattern: {
+                        value: /^[a-zA-Z0-9_]+$/,
+                        message:
+                          "Username can only contain letters, numbers, and underscores",
+                      },
+                    })}
+                  />
+                  <div className="absolute left-4 top-1/2 transform -translate-y-1/2">
+                    <FaUser className="text-gray-400 group-hover:text-orange-700 transition-colors duration-300" />
+                  </div>
+                </div>
+                {errors.username && (
+                  <p className="text-red-500 text-sm font-medium flex items-center gap-1">
+                    <svg
+                      className="w-4 h-4"
+                      fill="currentColor"
+                      viewBox="0 0 20 20"
+                    >
+                      <path
+                        fillRule="evenodd"
+                        d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
+                        clipRule="evenodd"
+                      />
+                    </svg>
+                    {errors.username.message}
+                  </p>
+                )}
+              </div>
+
+              {/* Email Field */}
+              <div className="space-y-2">
+                <label className="block text-sm font-normal font-brand text-orange-600">
+                  Email Address
+                </label>
+                <div className="relative group">
+                  <input
+                    type="email"
+                    placeholder="nowriafisda@cookeasy.com"
+                    className={`w-full px-12 py-3 font-brand text-black placeholder-gray-400 bg-gray-50 border rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-700 focus:border-transparent transition-all duration-300 group-hover:bg-white ${
+                      errors.email
+                        ? "border-red-500 bg-red-50"
+                        : "border-gray-200 focus:bg-white"
+                    }`}
+                    {...register("email", {
+                      required: "Email is required",
+                      pattern: {
+                        value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
+                        message: "Invalid email address",
+                      },
+                    })}
+                  />
+                  <div className="absolute left-4 top-1/2 transform -translate-y-1/2">
+                    <FaEnvelope className="text-gray-400 group-hover:text-orange-700 transition-colors duration-300" />
+                  </div>
+                </div>
+                {errors.email && (
+                  <p className="text-red-500 text-sm font-medium flex items-center gap-1">
+                    <svg
+                      className="w-4 h-4"
+                      fill="currentColor"
+                      viewBox="0 0 20 20"
+                    >
+                      <path
+                        fillRule="evenodd"
+                        d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
+                        clipRule="evenodd"
+                      />
+                    </svg>
+                    {errors.email.message}
+                  </p>
+                )}
+              </div>
+
+              {/* Password Field */}
+              <div className="space-y-2">
+                <label className="block text-sm font-normal font-brand text-orange-600">
+                  Password
+                </label>
+                <div className="relative group">
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    placeholder="Create a strong password"
+                    className={`w-full px-12 py-3 font-brand text-black placeholder-gray-400 bg-gray-50 border rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-700 focus:border-transparent transition-all duration-300 group-hover:bg-white ${
+                      errors.password
+                        ? "border-red-500 bg-red-50"
+                        : "border-gray-200 focus:bg-white"
+                    }`}
+                    {...register("password", {
+                      required: "Password is required",
+                      minLength: {
+                        value: 6,
+                        message: "Password must be at least 6 characters",
+                      },
+                    })}
+                  />
+                  <div className="absolute left-4 top-1/2 transform -translate-y-1/2">
+                    <FaLock className="text-gray-400 group-hover:text-orange-700 transition-colors duration-300" />
+                  </div>
+                  <button
+                    type="button"
+                    className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-orange-700 transition-colors duration-300 p-1"
+                    onClick={() => setShowPassword(!showPassword)}
+                  >
+                    {showPassword ? <FaEyeSlash /> : <FaEye />}
+                  </button>
+                </div>
+                {errors.password && (
+                  <p className="text-red-500 text-sm font-medium flex items-center gap-1">
+                    <svg
+                      className="w-4 h-4"
+                      fill="currentColor"
+                      viewBox="0 0 20 20"
+                    >
+                      <path
+                        fillRule="evenodd"
+                        d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
+                        clipRule="evenodd"
+                      />
+                    </svg>
+                    {errors.password.message}
+                  </p>
+                )}
+              </div>
+
+              {/* Confirm Password Field */}
+              <div className="space-y-2">
+                <label className="block text-sm font-normal font-brand text-orange-600">
+                  Confirm Password
+                </label>
+                <div className="relative group">
+                  <input
+                    type={showConfirmPassword ? "text" : "password"}
+                    placeholder="Confirm your password"
+                    className={`w-full px-12 py-3 font-brand text-black placeholder-gray-400 bg-gray-50 border rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-700 focus:border-transparent transition-all duration-300 group-hover:bg-white ${
+                      errors.confirmPassword
+                        ? "border-red-500 bg-red-50"
+                        : "border-gray-200 focus:bg-white"
+                    }`}
+                    {...register("confirmPassword", {
+                      required: "Please confirm your password",
+                      validate: (value) =>
+                        value === password || "Passwords do not match",
+                    })}
+                  />
+                  <div className="absolute left-4 top-1/2 transform -translate-y-1/2">
+                    <FaLock className="text-gray-400 group-hover:text-orange-700 transition-colors duration-300" />
+                  </div>
+                  <button
+                    type="button"
+                    className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-orange-700 transition-colors duration-300 p-1"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  >
+                    {showConfirmPassword ? <FaEyeSlash /> : <FaEye />}
+                  </button>
+                </div>
+                {errors.confirmPassword && (
+                  <p className="text-red-500 text-sm font-medium flex items-center gap-1">
+                    <svg
+                      className="w-4 h-4"
+                      fill="currentColor"
+                      viewBox="0 0 20 20"
+                    >
+                      <path
+                        fillRule="evenodd"
+                        d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
+                        clipRule="evenodd"
+                      />
+                    </svg>
+                    {errors.confirmPassword.message}
+                  </p>
+                )}
+              </div>
+
+              {/* Terms Agreement */}
+              <div className="space-y-2">
+                <label className="flex items-start cursor-pointer group">
+                  <input
+                    type="checkbox"
+                    className="w-4 h-4 text-orange-700 bg-gray-100 border-gray-300 rounded focus:ring-orange-700 focus:ring-2 transition-all duration-300"
+                    {...register("terms", {
+                      required: "You must agree to the terms and conditions",
+                    })}
+                  />
+                  <span className="ml-3 text-sm font-brand font-medium text-orange-50 transition-colors duration-300">
+                    I agree to the{" "}
+                    <Link
+                      to="/terms"
+                      className="text-sm font-brand font-medium text-orange-50 transition-colors duration-300"
+                    >
+                      Terms of Service
+                    </Link>{" "}
+                    and{" "}
+                    <Link
+                      to="/privacy"
+                      className="text-sm font-brand font-medium text-orange-50 transition-colors duration-300"
+                    >
+                      Privacy Policy
+                    </Link>
+                  </span>
+                </label>
+                {errors.terms && (
+                  <p className="text-red-500 text-sm font-medium flex items-center gap-1 ml-7">
+                    <svg
+                      className="w-4 h-4"
+                      fill="currentColor"
+                      viewBox="0 0 20 20"
+                    >
+                      <path
+                        fillRule="evenodd"
+                        d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
+                        clipRule="evenodd"
+                      />
+                    </svg>
+                    {errors.terms.message}
+                  </p>
+                )}
+              </div>
+
+              {/* Submit Button */}
+              <button
+                type="submit"
+                disabled={isSubmitting}
+                className="w-full bg-orange-50 hover:bg-orange-100 text-orange-800 font-semibold font-brand py-2 px-6 rounded-xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+              >
+                {isSubmitting ? (
+                  <div className="flex items-center justify-center">
+                    <LoadingSpinner size="sm" text="" />
+                    <span className="ml-2">Creating Account ...</span>
+                  </div>
+                ) : (
+                  "Create Account"
+                )}
+              </button>
+            </form>
+
+            {/* Social Login */}
+            <div className="mt-8">
+              <div className="relative">
+                <div className="absolute inset-0 flex items-center">
+                  <div className="w-full border-t border-gray-200"></div>
+                </div>
+                <div className="relative flex justify-center text-sm">
+                  <span className="px-4 rounded-xl bg-orange-50 text-orange-800 font-medium font-brand text-xs">
+                    Or continue with
+                  </span>
+                </div>
+              </div>
+
+              <div className="mt-6 grid grid-cols-2 gap-4">
+                <button className="flex items-center justify-center px-4 py-3 border border-gray-200 rounded-xl shadow-sm hover:shadow-md bg-white hover:bg-gray-50 transition-all duration-300 group">
+                  <FaGoogle className="text-red-500 mr-2 group-hover:scale-110 transition-transform duration-300" />
+                  <span className="text-gray-700 font-medium">Google</span>
+                </button>
+                <button className="flex items-center justify-center px-4 py-3 border border-gray-200 rounded-xl shadow-sm hover:shadow-md bg-white hover:bg-gray-50 transition-all duration-300 group">
+                  <FaFacebook className="text-blue-600 mr-2 group-hover:scale-110 transition-transform duration-300" />
+                  <span className="text-gray-700 font-medium">Facebook</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Sign In Link */}
+            <div className="text-center mt-8 pt-6 border-t border-gray-100">
+              <p className="text-orange-50 font-brand text-sm">
+                Already have an account?{" "}
+                <Link
+                  to="/login"
+                  className="ml-1 font-semibold text-sm text-orange-500 hover:text-orange-600 hover:underline transition-all duration-300"
+                >
+                  Sign in here
+                </Link>
+              </p>
+            </div>
+          </div>
         </div>
       </div>
     </div>

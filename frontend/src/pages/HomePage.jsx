@@ -115,13 +115,13 @@ const HomePage = () => {
       >
         {/* <div className="absolute inset-0 bg-white/5 backdrop-blur-sm"></div> */}
         <div className="relative z-10 text-right px-6 max-w-4xl mt-[-140px] mr-16">
-          <h1 className="text-5xl md:text-9xl font-serif bg-gradient-to-r from-orange-700 to-orange-900 bg-clip-text text-transparent leading-tight mb-4 drop-shadow-sm">
+          <h1 className="text-5xl md:text-9xl font-serif bg-orange-50 bg-clip-text text-transparent leading-tight mb-4 drop-shadow-sm">
             CookEasy
           </h1>
-          <p className="text-sm md:text-lg font-brand text-orange-800 font-normal mt-3">
+          <p className="text-sm md:text-lg font-brand text-orange-50 font-normal mt-3">
             Explore new flavors, create something amazing, and make it yours.
           </p>
-          <p className="text-sm md:text-lg font-brand text-orange-800 font-normal mb-10">
+          <p className="text-sm md:text-lg font-brand text-orange-50 font-normal mb-10">
             Join thousands of home cooks sharing delicious ideas every day.
           </p>
 
@@ -154,7 +154,7 @@ const HomePage = () => {
             <p className="text-orange-700 font-brand font-normal md:text-base max-w-xl mx-auto">
               Find the perfect recipe by exploring your favorite categories.
             </p>
-            <div className="w-16 h-1 bg-gradient-to-r from-orange-400 to-red-400 rounded-full mx-auto mt-4"></div>
+            <div className="w-44 h-1 bg-gradient-to-r from-orange-400 to-red-400 rounded-full mx-auto mt-4"></div>
           </div>
 
           {/* Category Cards */}
@@ -175,7 +175,7 @@ const HomePage = () => {
                 <h3 className="font-medium text-gray-800 text-base">
                   {category.name}
                 </h3>
-                <p className="text-sm text-gray-500">
+                <p className="text-xs text-gray-500">
                   {category.count} recipes
                 </p>
               </Link>
@@ -185,63 +185,63 @@ const HomePage = () => {
       </section>
 
       {/* Enhanced Featured Recipes Section */}
-      <section className="py-6 bg-gradient-to-b from-orange-50 to-orange-100">
+      <section className="py-4 bg-gradient-to-b from-orange-50 to-orange-100">
         <div className="container mx-auto px-4">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl md:text-5xl font-bold text-orange-800 mb-4">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl md:text-4xl font-medium font-brand text-orange-800 mb-2 underline decoration-orange-800">
               Featured Recipes
             </h2>
-            <p className="text-base md:text-lg text-gray-600 max-w-2xl mx-auto">
-              Discover the most loved and highest-rated dishes from our amazing
+            <p className="text-orange-700 font-brand font-normal md:text-sm max-w-xl mx-auto">
+              Discover the most loved and highest rated dishes from our amazing
               community.
             </p>
-            <div className="h-1 w-20 bg-gradient-to-r from-orange-400 to-red-400 rounded-full mx-auto mt-4"></div>
+            {/* <div className="h-1 w-44 bg-gradient-to-r from-orange-400 to-red-400 rounded-full mx-auto mt-4"></div> */}
           </div>
 
           {/* Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
-            {featuredRecipes.map((recipe, index) => (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto px-4">
+            {featuredRecipes.map((recipe) => (
               <div
                 key={recipe.id}
-                className="bg-white rounded-xl shadow-md hover:shadow-lg transition-transform duration-300 hover:-translate-y-1 overflow-hidden"
+                className="bg-white rounded-2xl border border-gray-200 hover:shadow-lg transition duration-300 overflow-hidden"
               >
                 <img
                   src={recipe.image}
                   alt={recipe.title}
-                  className="w-full h-48 object-cover"
+                  className="w-full h-44 object-cover"
                 />
-                <div className="p-5">
-                  <div className="flex justify-between items-start mb-3">
-                    <h3 className="text-lg font-semibold text-gray-800">
+                <div className="p-4">
+                  <div className="flex justify-between items-center mb-2">
+                    <h3 className="text-base font-semibold text-orange-800 font-brand line-clamp-1">
                       {recipe.title}
                     </h3>
                     <span
-                      className={`text-xs px-2 py-1 rounded-full font-medium ${
+                      className={`text-xs px-2 py-0.5 rounded-full font-medium ${
                         recipe.difficulty === "Easy"
-                          ? "bg-green-100 text-green-700"
+                          ? "bg-green-100 text-green-600"
                           : recipe.difficulty === "Medium"
-                          ? "bg-yellow-100 text-yellow-700"
-                          : "bg-red-100 text-red-700"
+                          ? "bg-yellow-100 text-yellow-600"
+                          : "bg-red-100 text-red-600"
                       }`}
                     >
                       {recipe.difficulty}
                     </span>
                   </div>
-                  <p className="text-sm text-gray-600 line-clamp-2 mb-3">
+                  <p className="text-xs text-gray-500 font-brand line-clamp-2 mb-4">
                     {recipe.description}
                   </p>
-                  <div className="flex justify-between items-center text-sm text-gray-500">
+                  <div className="flex justify-between items-center font-brand text-xs text-gray-500 mb-4">
                     <span className="flex items-center gap-1">
                       <FaStar className="text-yellow-400" /> {recipe.rating}
                     </span>
                     <span className="flex items-center gap-1">
                       <FaHeart className="text-red-400" /> {recipe.likes}
                     </span>
-                    <span>by {recipe.author}</span>
+                    <span className="italic">by {recipe.author}</span>
                   </div>
                   <Link
                     to={`/recipes/${recipe.id}`}
-                    className="block text-center mt-5 bg-gradient-to-r from-orange-500 to-red-500 text-white py-2 rounded-lg font-medium hover:from-orange-600 hover:to-red-600 transition-all"
+                    className="block w-full text-center text-sm font-medium text-orange-800 bg-orange-50 hover:bg-orange-100 rounded-lg py-2 transition"
                   >
                     View Recipe
                   </Link>
@@ -251,12 +251,15 @@ const HomePage = () => {
           </div>
 
           {/* View All Button */}
-          <div className="text-center mt-14">
+          <div className="flex justify-end mt-8 mr-16 mb-4">
             <Link
               to="/search"
-              className="inline-flex items-center gap-2 bg-gradient-to-r from-orange-500 to-red-500 text-white px-6 py-3 rounded-lg text-base font-medium hover:from-orange-600 hover:to-red-600 transition-all shadow-md"
+              className="inline-flex items-center gap-2 bg-white border-2 border-orange-600 text-orange-700 px-7 py-2 rounded-lg text-sm  font-brand font-normal shadow-sm hover:bg-orange-50 hover:border-orange-700 hover:text-orange-900 transition-all duration-200 group"
             >
-              Explore All Recipes <FaArrowRight />
+              Explore All Recipes
+              <span className="transform transition-transform duration-200 group-hover:translate-x-1">
+                <FaArrowRight />
+              </span>
             </Link>
           </div>
         </div>
