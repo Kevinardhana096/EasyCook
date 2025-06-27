@@ -3,6 +3,7 @@ import { useParams, useSearchParams } from "react-router-dom";
 import { FaSearch, FaFilter, FaStar, FaClock, FaUsers, FaUtensils, FaFire, FaCoffee, FaCookie, FaCarrot } from "react-icons/fa";
 import RecipeCard from "../components/recipe/RecipeCard";
 import LoadingSpinner from "../components/common/LoadingSpinner";
+import api from "../api/recipes";
 
 const CategoryPage = () => {
     const { categorySlug } = useParams();
@@ -12,127 +13,144 @@ const CategoryPage = () => {
     const [selectedCategory, setSelectedCategory] = useState(categorySlug || "all");
     const [sortBy, setSortBy] = useState("popular");
     const [difficulty, setDifficulty] = useState("all");
+    const [categories, setCategories] = useState([]);
+    const [recipes, setRecipes] = useState([]);
+    const [pagination, setPagination] = useState(null);
+    const [error, setError] = useState(null);
 
-    // Mock data untuk kategori
-    const categories = [
-        { id: "all", name: "Semua Kategori", icon: FaUtensils, count: 150, color: "text-orange-500" },
-        { id: "main-course", name: "Hidangan Utama", icon: FaUtensils, count: 45, color: "text-red-500" },
-        { id: "appetizer", name: "Pembuka", icon: FaFire, count: 25, color: "text-yellow-500" },
-        { id: "dessert", name: "Penutup", icon: FaCookie, count: 30, color: "text-pink-500" },
-        { id: "beverage", name: "Minuman", icon: FaCoffee, count: 20, color: "text-blue-500" },
-        { id: "snack", name: "Camilan", icon: FaCarrot, count: 35, color: "text-green-500" },
-        { id: "traditional", name: "Tradisional", icon: FaStar, count: 40, color: "text-purple-500" },
+    useEffect(() => {
+        fetchCategories();
+    }, []);
+
+    useEffect(() => {
+        // Only fetch recipes if categories have been loaded or if we're searching for all categories
+        if (categories.length > 0 || selectedCategory === "all") {
+            fetchRecipes();
+        }
+    }, [selectedCategory, sortBy, difficulty, searchTerm, categories]);
+
+    const fetchCategories = async () => {
+        try {
+            const response = await api.categories.getAll();
+            const categoriesData = response.data.categories;
+
+            // Add "All Categories" option
+            const allCategories = [
+                {
+                    id: "all",
+                    name: "Semua Kategori",
+                    slug: "all",
+                    recipe_count: categoriesData.reduce((sum, cat) => sum + (cat.recipe_count || 0), 0)
+                },
+                ...categoriesData
+            ];
+
+            setCategories(allCategories);
+        } catch (err) {
+            console.error('Error fetching categories:', err);
+            setError('Gagal mengambil data kategori');
+        }
+    };
+
+    const fetchRecipes = async () => {
+        try {
+            setLoading(true);
+            setError(null); // Reset error state
+            let response;
+
+            if (searchTerm) {
+                // Use search API
+                const categoryId = selectedCategory !== "all" ? getCategoryIdBySlug(selectedCategory) : null;
+                const searchParams = {
+                    q: searchTerm,
+                    ...(categoryId && { category_id: categoryId }),
+                    ...(difficulty !== "all" && { difficulty: difficulty })
+                };
+                response = await api.recipes.search(searchParams);
+            } else {
+                // Use regular recipes API
+                const categoryId = selectedCategory !== "all" ? getCategoryIdBySlug(selectedCategory) : null;
+                const params = {
+                    sort_by: sortBy,
+                    ...(categoryId && { category_id: categoryId }),
+                    ...(difficulty !== "all" && { difficulty: difficulty })
+                };
+                response = await api.recipes.getAll(params);
+            }
+
+            // Transform recipes to add author field for RecipeCard compatibility
+            const transformedRecipes = (response.data.recipes || []).map(recipe => ({
+                ...recipe,
+                author: recipe.user?.username || recipe.user?.full_name || 'Unknown Chef'
+            }));
+
+            setRecipes(transformedRecipes);
+            if (response.data.pagination) {
+                setPagination(response.data.pagination);
+            }
+        } catch (err) {
+            console.error('Error fetching recipes:', err);
+            setError('Gagal mengambil data resep');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const getCategoryIdBySlug = (slug) => {
+        if (!slug || slug === "all" || categories.length === 0) {
+            return null;
+        }
+        const category = categories.find(cat => cat.slug === slug);
+        if (!category) {
+            console.warn(`Category with slug "${slug}" not found`);
+            return null;
+        }
+        return category.id;
+    };
+
+    // Icon mapping for categories
+    const iconMap = {
+        'all': FaUtensils,
+        'main-course': FaUtensils,
+        'appetizer': FaFire,
+        'dessert': FaCookie,
+        'beverage': FaCoffee,
+        'snack': FaCarrot,
+        'traditional': FaStar,
+    };
+
+    // Color mapping for categories
+    const colorMap = {
+        'all': 'text-orange-500',
+        'main-course': 'text-red-500',
+        'appetizer': 'text-yellow-500',
+        'dessert': 'text-pink-500',
+        'beverage': 'text-blue-500',
+        'snack': 'text-green-500',
+        'traditional': 'text-purple-500',
+    };
+
+    // Mock data untuk fallback
+    const mockCategories = [
+        { id: "all", name: "Semua Kategori", icon: FaUtensils, count: 150, color: "text-orange-500", slug: "all" },
+        { id: "main-course", name: "Hidangan Utama", icon: FaUtensils, count: 45, color: "text-red-500", slug: "main-course" },
+        { id: "appetizer", name: "Pembuka", icon: FaFire, count: 25, color: "text-yellow-500", slug: "appetizer" },
+        { id: "dessert", name: "Penutup", icon: FaCookie, count: 30, color: "text-pink-500", slug: "dessert" },
+        { id: "beverage", name: "Minuman", icon: FaCoffee, count: 20, color: "text-blue-500", slug: "beverage" },
+        { id: "snack", name: "Camilan", icon: FaCarrot, count: 35, color: "text-green-500", slug: "snack" },
+        { id: "traditional", name: "Tradisional", icon: FaStar, count: 40, color: "text-purple-500", slug: "traditional" },
     ];
 
-    // Mock data untuk resep
-    const [recipes] = useState([
-        {
-            id: 1,
-            title: "Nasi Goreng Kampung",
-            description: "Nasi goreng dengan cita rasa tradisional Indonesia yang autentik",
-            image: "https://images.unsplash.com/photo-1603133872878-684f208fb84b?w=400&h=300&fit=crop",
-            rating: 4.8,
-            cookTime: 25,
-            difficulty: "Easy",
-            author: "Chef Sari",
-            likes: 245,
-            views: 1200,
-            category: "main-course",
-            isFavorited: false
-        },
-        {
-            id: 2,
-            title: "Rendang Daging Sapi",
-            description: "Rendang autentik dengan rempah-rempah pilihan dan bumbu yang meresap",
-            image: "https://images.unsplash.com/photo-1562967916-eb82221dfb92?w=400&h=300&fit=crop",
-            rating: 4.9,
-            cookTime: 180,
-            difficulty: "Hard",
-            author: "Chef Budi",
-            likes: 389,
-            views: 2100,
-            category: "main-course",
-            isFavorited: true
-        },
-        {
-            id: 3,
-            title: "Es Teh Manis",
-            description: "Minuman segar yang cocok untuk cuaca panas",
-            image: "https://images.unsplash.com/photo-1556679343-c7306c1976bc?w=400&h=300&fit=crop",
-            rating: 4.5,
-            cookTime: 5,
-            difficulty: "Easy",
-            author: "Chef Ina",
-            likes: 156,
-            views: 800,
-            category: "beverage",
-            isFavorited: false
-        },
-        {
-            id: 4,
-            title: "Klepon",
-            description: "Kue tradisional dengan isian gula merah yang manis",
-            image: "https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=400&h=300&fit=crop",
-            rating: 4.7,
-            cookTime: 45,
-            difficulty: "Medium",
-            author: "Chef Maya",
-            likes: 203,
-            views: 950,
-            category: "dessert",
-            isFavorited: true
-        },
-        {
-            id: 5,
-            title: "Gado-Gado Jakarta",
-            description: "Salad sayuran segar dengan bumbu kacang yang nikmat",
-            image: "https://images.unsplash.com/photo-1546833999-b9f581a1996d?w=400&h=300&fit=crop",
-            rating: 4.6,
-            cookTime: 30,
-            difficulty: "Medium",
-            author: "Chef Rini",
-            likes: 178,
-            views: 750,
-            category: "appetizer",
-            isFavorited: false
-        },
-        {
-            id: 6,
-            title: "Keripik Singkong",
-            description: "Camilan renyah yang cocok untuk teman ngemil",
-            image: "https://images.unsplash.com/photo-1621939514649-280e2ee25f60?w=400&h=300&fit=crop",
-            rating: 4.4,
-            cookTime: 60,
-            difficulty: "Easy",
-            author: "Chef Dedi",
-            likes: 134,
-            views: 600,
-            category: "snack",
-            isFavorited: false
-        }
-    ]);
+    // Use API data if available, otherwise use mock data
+    const displayCategories = categories.length > 0 ? categories.map(cat => ({
+        ...cat,
+        icon: iconMap[cat.slug] || FaUtensils,
+        color: colorMap[cat.slug] || 'text-gray-500',
+        count: cat.recipe_count || 0
+    })) : mockCategories;
 
-    // Filter dan sort resep
-    const filteredRecipes = recipes.filter(recipe => {
-        const matchesSearch = recipe.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            recipe.description.toLowerCase().includes(searchTerm.toLowerCase());
-        const matchesCategory = selectedCategory === "all" || recipe.category === selectedCategory;
-        const matchesDifficulty = difficulty === "all" || recipe.difficulty.toLowerCase() === difficulty;
-
-        return matchesSearch && matchesCategory && matchesDifficulty;
-    }).sort((a, b) => {
-        switch (sortBy) {
-            case "newest":
-                return b.id - a.id;
-            case "rating":
-                return b.rating - a.rating;
-            case "fastest":
-                return a.cookTime - b.cookTime;
-            case "popular":
-            default:
-                return b.likes - a.likes;
-        }
-    });
+    // Filter dan sort resep (jika diperlukan untuk data lokal)
+    const filteredRecipes = recipes;
 
     const handleSearch = (e) => {
         e.preventDefault();
@@ -147,7 +165,7 @@ const CategoryPage = () => {
     };
 
     const getCurrentCategory = () => {
-        return categories.find(cat => cat.id === selectedCategory) || categories[0];
+        return displayCategories.find(cat => cat.id === selectedCategory || cat.slug === selectedCategory) || displayCategories[0];
     };
 
     return (
@@ -197,19 +215,19 @@ const CategoryPage = () => {
                                     Kategori
                                 </h3>
                                 <div className="space-y-2">
-                                    {categories.map((category) => {
+                                    {displayCategories.map((category) => {
                                         const Icon = category.icon;
                                         return (
                                             <button
                                                 key={category.id}
-                                                onClick={() => setSelectedCategory(category.id)}
-                                                className={`w-full text-left p-3 rounded-lg transition-colors flex items-center justify-between group ${selectedCategory === category.id
-                                                        ? "bg-orange-100 text-orange-700 border border-orange-200"
-                                                        : "hover:bg-gray-50"
+                                                onClick={() => setSelectedCategory(category.slug || category.id)}
+                                                className={`w-full text-left p-3 rounded-lg transition-colors flex items-center justify-between group ${(selectedCategory === category.id || selectedCategory === category.slug)
+                                                    ? "bg-orange-100 text-orange-700 border border-orange-200"
+                                                    : "hover:bg-gray-50"
                                                     }`}
                                             >
                                                 <div className="flex items-center gap-3">
-                                                    <Icon className={`${category.color} ${selectedCategory === category.id ? 'text-orange-500' : ''}`} />
+                                                    <Icon className={`${category.color} ${(selectedCategory === category.id || selectedCategory === category.slug) ? 'text-orange-500' : ''}`} />
                                                     <span className="font-medium">{category.name}</span>
                                                 </div>
                                                 <span className="px-2 py-1 text-sm text-gray-500 bg-gray-100 rounded-full">
@@ -237,9 +255,9 @@ const CategoryPage = () => {
                                         className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                                     >
                                         <option value="all">Semua Tingkat</option>
-                                        <option value="easy">Mudah</option>
-                                        <option value="medium">Sedang</option>
-                                        <option value="hard">Sulit</option>
+                                        <option value="Easy">Mudah</option>
+                                        <option value="Medium">Sedang</option>
+                                        <option value="Hard">Sulit</option>
                                     </select>
                                 </div>
 
@@ -283,7 +301,9 @@ const CategoryPage = () => {
                                 </div>
                                 <div className="text-center">
                                     <div className="text-2xl font-bold text-orange-500">
-                                        {filteredRecipes.reduce((avg, recipe) => avg + recipe.rating, 0) / filteredRecipes.length || 0}
+                                        {filteredRecipes.length > 0 ?
+                                            (filteredRecipes.reduce((avg, recipe) => avg + (recipe.average_rating || 0), 0) / filteredRecipes.length).toFixed(1)
+                                            : 0}
                                     </div>
                                     <div className="text-sm text-gray-500">Rating Rata-rata</div>
                                 </div>
@@ -297,8 +317,25 @@ const CategoryPage = () => {
                             </div>
                         )}
 
+                        {/* Error State */}
+                        {error && (
+                            <div className="py-12 text-center">
+                                <div className="mb-4 text-6xl text-red-300">⚠️</div>
+                                <h3 className="mb-2 text-xl font-semibold text-red-600">
+                                    Terjadi Kesalahan
+                                </h3>
+                                <p className="text-red-500">{error}</p>
+                                <button
+                                    onClick={() => window.location.reload()}
+                                    className="mt-4 btn btn-primary"
+                                >
+                                    Coba Lagi
+                                </button>
+                            </div>
+                        )}
+
                         {/* Recipes Grid */}
-                        {!loading && (
+                        {!loading && !error && (
                             <>
                                 {filteredRecipes.length > 0 ? (
                                     <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
@@ -324,10 +361,16 @@ const CategoryPage = () => {
                             </>
                         )}
 
-                        {/* Load More Button */}
-                        {!loading && filteredRecipes.length > 0 && filteredRecipes.length >= 9 && (
+                        {/* Pagination or Load More */}
+                        {!loading && !error && filteredRecipes.length > 0 && pagination && pagination.has_next && (
                             <div className="mt-8 text-center">
-                                <button className="btn btn-outline btn-primary btn-lg">
+                                <button
+                                    onClick={() => {
+                                        // Implement load more functionality
+                                        console.log('Load more clicked');
+                                    }}
+                                    className="btn btn-outline btn-primary btn-lg"
+                                >
                                     Muat Lebih Banyak
                                 </button>
                             </div>

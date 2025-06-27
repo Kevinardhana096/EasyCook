@@ -1,33 +1,138 @@
 from flask import Blueprint, jsonify, request
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from app import db
-from app.models import Recipe, Category, Rating, User
+from app.models import Recipe, Category, Rating, User, Ingredient
 from app.utils.decorators import chef_or_admin_required, admin_required
+from sqlalchemy import func, desc
 
 recipes_bp = Blueprint('recipes', __name__)
+
+@recipes_bp.route('/stats', methods=['GET'])
+def get_platform_stats():
+    """Get global platform statistics"""
+    try:
+        # Calculate various statistics
+        total_recipes = Recipe.query.filter_by(is_published=True).count()
+        total_users = User.query.filter_by(is_active=True).count()
+        total_categories = Category.query.filter_by(is_active=True).count()
+        total_ratings = Rating.query.count()
+        
+        # Calculate total views across all recipes
+        total_views = db.session.query(func.sum(Recipe.view_count)).filter_by(is_published=True).scalar() or 0
+        
+        # Calculate total likes across all recipes
+        total_likes = db.session.query(func.sum(Recipe.like_count)).filter_by(is_published=True).scalar() or 0
+        
+        # Calculate average rating across all recipes
+        avg_rating = db.session.query(func.avg(Rating.rating)).scalar() or 0
+        
+        # Get top categories by recipe count
+        top_categories = db.session.query(
+            Category.name,
+            Category.icon,
+            func.count(Recipe.id).label('recipe_count')
+        ).join(Recipe).filter(
+            Recipe.is_published == True,
+            Category.is_active == True
+        ).group_by(Category.id).order_by(desc('recipe_count')).limit(3).all()
+        
+        # Get featured recipes count
+        featured_recipes = Recipe.query.filter_by(is_published=True, is_featured=True).count()
+        
+        return jsonify({
+            'message': 'Platform statistics retrieved successfully',
+            'stats': {
+                'total_recipes': total_recipes,
+                'total_users': total_users,
+                'total_categories': total_categories,
+                'total_ratings': total_ratings,
+                'total_views': int(total_views),
+                'total_likes': int(total_likes),
+                'average_rating': round(float(avg_rating), 1),
+                'featured_recipes': featured_recipes,
+                'top_categories': [
+                    {
+                        'name': cat.name,
+                        'icon': cat.icon,
+                        'recipe_count': cat.recipe_count
+                    } for cat in top_categories
+                ]
+            }
+        }), 200
+        
+    except Exception as e:
+        return jsonify({'message': 'Failed to get platform statistics', 'error': str(e)}), 500
 
 @recipes_bp.route('/categories', methods=['GET'])
 def get_categories():
     try:
         categories = Category.query.filter_by(is_active=True).order_by(Category.name).all()
         
+        # Add recipe count for each category
+        categories_with_count = []
+        for category in categories:
+            category_dict = category.to_dict()
+            category_dict['recipe_count'] = Recipe.query.filter_by(category_id=category.id, is_published=True).count()
+            categories_with_count.append(category_dict)
+        
         return jsonify({
             'message': 'Categories retrieved successfully',
-            'categories': [category.to_dict() for category in categories]
+            'categories': categories_with_count
         }), 200
         
     except Exception as e:
         return jsonify({'message': 'Failed to get categories', 'error': str(e)}), 500
 
+@recipes_bp.route('', methods=['GET'])
 @recipes_bp.route('/', methods=['GET'])
 def get_recipes():
     try:
-        recipes = Recipe.query.filter_by(is_published=True).order_by(Recipe.created_at.desc()).all()
+        # Get query parameters
+        page = int(request.args.get('page', 1))
+        per_page = int(request.args.get('per_page', 12))
+        category_id = request.args.get('category_id')
+        difficulty = request.args.get('difficulty')
+        sort_by = request.args.get('sort_by', 'newest')  # newest, popular, rating
+        
+        # Use joinedload to eagerly load user and category data
+        from sqlalchemy.orm import joinedload
+        recipes_query = Recipe.query.options(
+            joinedload(Recipe.user),
+            joinedload(Recipe.category)
+        ).filter_by(is_published=True)
+        
+        # Apply filters
+        if category_id:
+            recipes_query = recipes_query.filter_by(category_id=int(category_id))
+        
+        if difficulty:
+            recipes_query = recipes_query.filter_by(difficulty=difficulty)
+        
+        # Apply sorting
+        if sort_by == 'popular':
+            recipes_query = recipes_query.order_by(desc(Recipe.view_count))
+        elif sort_by == 'rating':
+            # Order by average rating
+            recipes_query = recipes_query.outerjoin(Rating).group_by(Recipe.id).order_by(desc(func.avg(Rating.rating)))
+        else:  # newest
+            recipes_query = recipes_query.order_by(Recipe.created_at.desc())
+        
+        # Paginate
+        recipes = recipes_query.paginate(
+            page=page, per_page=per_page, error_out=False
+        )
         
         return jsonify({
             'message': 'Recipes retrieved successfully',
-            'recipes': [recipe.to_dict(include_details=False) for recipe in recipes],
-            'total': len(recipes)
+            'recipes': [recipe.to_dict(include_details=False) for recipe in recipes.items],
+            'pagination': {
+                'page': page,
+                'per_page': per_page,
+                'total': recipes.total,
+                'pages': recipes.pages,
+                'has_next': recipes.has_next,
+                'has_prev': recipes.has_prev
+            }
         }), 200
         
     except Exception as e:
@@ -36,7 +141,12 @@ def get_recipes():
 @recipes_bp.route('/<int:recipe_id>', methods=['GET'])
 def get_recipe(recipe_id):
     try:
-        recipe = Recipe.query.get(recipe_id)
+        # Use joinedload to eagerly load user and category data
+        from sqlalchemy.orm import joinedload
+        recipe = Recipe.query.options(
+            joinedload(Recipe.user),
+            joinedload(Recipe.category)
+        ).get(recipe_id)
         
         if not recipe or not recipe.is_published:
             return jsonify({'message': 'Recipe not found'}), 404
@@ -53,6 +163,7 @@ def get_recipe(recipe_id):
     except Exception as e:
         return jsonify({'message': 'Failed to get recipe', 'error': str(e)}), 500
 
+@recipes_bp.route('', methods=['POST'])
 @recipes_bp.route('/', methods=['POST'])
 @jwt_required()
 @chef_or_admin_required
@@ -234,7 +345,7 @@ def rate_recipe(recipe_id):
             return jsonify({
                 'message': 'Rating added successfully',
                 'rating': rating.to_dict()
-            }), 201
+            }, 201)
         
     except Exception as e:
         db.session.rollback()
@@ -297,3 +408,149 @@ def search_recipes():
         
     except Exception as e:
         return jsonify({'message': 'Search failed', 'error': str(e)}), 500
+
+@recipes_bp.route('/featured', methods=['GET'])
+def get_featured_recipes():
+    try:
+        from sqlalchemy.orm import joinedload
+        recipes = Recipe.query.options(
+            joinedload(Recipe.user),
+            joinedload(Recipe.category)
+        ).filter_by(is_published=True, is_featured=True).order_by(Recipe.created_at.desc()).limit(6).all()
+        
+        return jsonify({
+            'message': 'Featured recipes retrieved successfully',
+            'recipes': [recipe.to_dict(include_details=False) for recipe in recipes]
+        }), 200
+        
+    except Exception as e:
+        return jsonify({'message': 'Failed to get featured recipes', 'error': str(e)}), 500
+
+@recipes_bp.route('/popular', methods=['GET'])
+def get_popular_recipes():
+    try:
+        from sqlalchemy.orm import joinedload
+        limit = int(request.args.get('limit', 6))
+        recipes = Recipe.query.options(
+            joinedload(Recipe.user),
+            joinedload(Recipe.category)
+        ).filter_by(is_published=True).order_by(Recipe.view_count.desc()).limit(limit).all()
+        
+        return jsonify({
+            'message': 'Popular recipes retrieved successfully',
+            'recipes': [recipe.to_dict(include_details=False) for recipe in recipes]
+        }), 200
+        
+    except Exception as e:
+        return jsonify({'message': 'Failed to get popular recipes', 'error': str(e)}), 500
+
+@recipes_bp.route('/favorites', methods=['GET'])
+@jwt_required()
+def get_user_favorites():
+    try:
+        user_id = int(get_jwt_identity())
+        
+        # Get user's favorite recipes via ratings with high score
+        favorites_query = db.session.query(Recipe).join(Rating).filter(
+            Rating.user_id == user_id,
+            Rating.rating >= 4,
+            Recipe.is_published == True
+        ).order_by(Rating.created_at.desc())
+        
+        favorites = favorites_query.all()
+        
+        return jsonify({
+            'message': 'Favorite recipes retrieved successfully',
+            'recipes': [recipe.to_dict(include_details=False) for recipe in favorites],
+            'total': len(favorites)
+        }), 200
+        
+    except Exception as e:
+        return jsonify({'message': 'Failed to get favorite recipes', 'error': str(e)}), 500
+
+@recipes_bp.route('/<int:recipe_id>/favorite', methods=['POST'])
+@jwt_required()
+def toggle_favorite(recipe_id):
+    try:
+        user_id = int(get_jwt_identity())
+        recipe = Recipe.query.get_or_404(recipe_id)
+        
+        # Check if user already has a rating for this recipe
+        existing_rating = Rating.query.filter_by(user_id=user_id, recipe_id=recipe_id).first()
+        
+        if existing_rating:
+            # Toggle favorite status by rating (4-5 = favorite, 1-3 = not favorite)
+            if existing_rating.rating >= 4:
+                # Remove from favorites by setting rating to 3
+                existing_rating.rating = 3
+                message = 'Recipe removed from favorites'
+                is_favorited = False
+            else:
+                # Add to favorites by setting rating to 5
+                existing_rating.rating = 5
+                message = 'Recipe added to favorites'
+                is_favorited = True
+        else:
+            # Create new rating as favorite
+            rating = Rating(
+                user_id=user_id,
+                recipe_id=recipe_id,
+                rating=5,
+                review='',
+                is_verified=False
+            )
+            db.session.add(rating)
+            message = 'Recipe added to favorites'
+            is_favorited = True
+        
+        db.session.commit()
+        
+        return jsonify({
+            'message': message,
+            'is_favorited': is_favorited
+        }), 200
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'message': 'Failed to toggle favorite', 'error': str(e)}), 500
+
+@recipes_bp.route('/ingredients', methods=['GET'])
+def get_ingredients():
+    try:
+        ingredients = Ingredient.query.filter_by(is_active=True).order_by(Ingredient.name).all()
+        
+        return jsonify({
+            'message': 'Ingredients retrieved successfully',
+            'ingredients': [ingredient.to_dict() for ingredient in ingredients]
+        }), 200
+        
+    except Exception as e:
+        return jsonify({'message': 'Failed to get ingredients', 'error': str(e)}), 500
+
+@recipes_bp.route('/<int:recipe_id>/toggle-publish', methods=['PUT'])
+@jwt_required()
+def toggle_recipe_publish(recipe_id):
+    """Toggle recipe published status - only recipe owner or admin can do this"""
+    try:
+        user_id = int(get_jwt_identity())
+        user = User.query.get(user_id)
+        recipe = Recipe.query.get_or_404(recipe_id)
+        
+        # Check permissions
+        if recipe.user_id != user_id and user.role != 'admin':
+            return jsonify({'message': 'Insufficient permissions'}), 403
+        
+        # Toggle published status
+        recipe.is_published = not recipe.is_published
+        db.session.commit()
+        
+        status = 'published' if recipe.is_published else 'unpublished'
+        return jsonify({
+            'message': f'Recipe {status} successfully',
+            'recipe': recipe.to_dict(),
+            'is_published': recipe.is_published
+        }), 200
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'message': 'Failed to toggle recipe status', 'error': str(e)}), 500

@@ -75,6 +75,15 @@ const LoginPage = () => {
             <p className="text-orange-50 text-base font-brand font-normal">
               Sign in to access your recipe collection
             </p>
+            
+            {/* Show message if user was redirected from protected route */}
+            {location.state?.from && (
+              <div className="mt-4 bg-blue-100 border border-blue-400 text-blue-700 px-4 py-3 rounded-lg">
+                <p className="text-sm">
+                  Please log in to access that page
+                </p>
+              </div>
+            )}
           </div>
 
           {/* Main Login Card with Enhanced Design */}

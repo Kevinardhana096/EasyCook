@@ -6,6 +6,7 @@ import {
   FaClock, FaUsers, FaUtensils, FaImage, FaList, FaEdit
 } from 'react-icons/fa';
 import { useAuth } from '../contexts/AuthContext';
+import { canCreateRecipes } from '../utils/roleUtils';
 import LoadingSpinner from '../components/common/LoadingSpinner';
 import apiClient from '../api/client';
 
@@ -13,14 +14,14 @@ const CreateRecipePage = () => {
   const navigate = useNavigate();
   const { user, isAuthenticated } = useAuth();
 
-  // Form state management
+  // Form state management - moved to top level before any conditionals
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(false);
   const [submitSuccess, setSubmitSuccess] = useState(false);
   const [imagePreview, setImagePreview] = useState(null);
   const [activeTab, setActiveTab] = useState('basic');
 
-  // Form setup with react-hook-form
+  // Form setup with react-hook-form - moved to top level before any conditionals
   const {
     register,
     control,
@@ -100,14 +101,12 @@ const CreateRecipePage = () => {
       // Create preview
       const reader = new FileReader();
       reader.onload = (e) => {
-        setImagePreview(e.target.result);
+        const dataUrl = e.target.result;
+        setImagePreview(dataUrl);
+        // Use the actual uploaded image data URL
+        setValue('image_url', dataUrl);
       };
       reader.readAsDataURL(file);
-
-      // In real app, upload to cloud storage
-      // For now, use placeholder
-      const imageUrl = `https://images.unsplash.com/photo-1546833999-b9f581a1996d?w=400&h=300&fit=crop&auto=format&q=80`;
-      setValue('image_url', imageUrl);
     }
   };
 
@@ -122,17 +121,34 @@ const CreateRecipePage = () => {
     try {
       // Prepare recipe data
       const recipeData = {
-        ...data,
-        slug: data.title.toLowerCase().replace(/[^a-z0-9\s-]/g, '').replace(/\s+/g, '-'),
+        title: data.title,
+        description: data.description,
+        instructions: data.instructions,
+        prep_time: parseInt(data.prep_time) || 0,
+        cook_time: parseInt(data.cook_time) || 0,
+        total_time: (parseInt(data.prep_time) || 0) + (parseInt(data.cook_time) || 0),
+        servings: parseInt(data.servings) || 4,
+        difficulty: data.difficulty || 'Medium',
+        image_url: data.image_url || '',
+        tips: data.tips || '',
+        category_id: parseInt(data.category_id) || null,
         is_published: true,
-        total_time: (parseInt(data.prep_time) || 0) + (parseInt(data.cook_time) || 0)
+        // Include nutrition data if provided
+        nutrition: {
+          calories_per_serving: parseFloat(data.nutrition?.calories_per_serving) || null,
+          protein: parseFloat(data.nutrition?.protein) || null,
+          carbs: parseFloat(data.nutrition?.carbs) || null,
+          fat: parseFloat(data.nutrition?.fat) || null,
+          fiber: parseFloat(data.nutrition?.fiber) || null
+        }
       };
 
       console.log('Submitting recipe:', recipeData);
 
-      // For now, simulate API call
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      // Make actual API call to create recipe
+      const response = await apiClient.post('/recipes/', recipeData);
 
+      console.log('Recipe created successfully:', response.data);
       setSubmitSuccess(true);
 
       // Reset form after success
@@ -145,7 +161,11 @@ const CreateRecipePage = () => {
 
     } catch (err) {
       console.error('Recipe creation failed:', err);
-      alert('Failed to create recipe. Please try again.');
+      if (err.response?.data?.message) {
+        alert(`Failed to create recipe: ${err.response.data.message}`);
+      } else {
+        alert('Failed to create recipe. Please try again.');
+      }
     } finally {
       setLoading(false);
     }
@@ -178,6 +198,30 @@ const CreateRecipePage = () => {
   if (!isAuthenticated) {
     return <LoadingSpinner size="lg" text="Checking authentication..." />;
   }
+
+  // Check if user can create recipes
+  if (!canCreateRecipes(user)) {
+    return (
+      <div className="min-h-screen bg-orange-50 flex items-center justify-center">
+        <div className="max-w-md w-full mx-4">
+          <div className="bg-white rounded-xl shadow-lg p-8 text-center">
+            <div className="text-6xl mb-4">👨‍🍳</div>
+            <h1 className="text-2xl font-bold text-gray-800 mb-2">Chef Access Required</h1>
+            <p className="text-gray-600 mb-6">
+              You need chef or admin privileges to create recipes.
+            </p>
+            <button
+              onClick={() => navigate('/')}
+              className="btn btn-outline btn-orange"
+            >
+              Back to Home
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-orange-50 via-yellow-50 to-red-50">
       {/* Animated Header */}

@@ -102,7 +102,13 @@ const SearchPage = () => {
       const response = await apiClient.get(endpoint);
       const data = response.data;
 
-      setRecipes(data.recipes || []);
+      // Transform recipes to add author field for RecipeCard compatibility
+      const transformedRecipes = (data.recipes || []).map(recipe => ({
+        ...recipe,
+        author: recipe.user?.username || recipe.user?.full_name || 'Unknown Chef'
+      }));
+
+      setRecipes(transformedRecipes);
       setTotalResults(data.pagination?.total || data.recipes?.length || 0);
       setTotalPages(data.pagination?.pages || 1);
     } catch (err) {

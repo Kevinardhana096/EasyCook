@@ -3,6 +3,8 @@ import { Link } from "react-router-dom";
 import { FaHeart, FaSearch, FaFilter, FaStar, FaClock, FaUsers, FaBookmark, FaShare, FaTrash, FaEdit } from "react-icons/fa";
 import RecipeCard from "../components/recipe/RecipeCard";
 import LoadingSpinner from "../components/common/LoadingSpinner";
+import api from "../api/recipes";
+import { useAuth } from "../contexts/AuthContext";
 
 const FavoritePage = () => {
     const [loading, setLoading] = useState(false);
@@ -10,23 +12,63 @@ const FavoritePage = () => {
     const [sortBy, setSortBy] = useState("newest");
     const [filterBy, setFilterBy] = useState("all");
     const [viewMode, setViewMode] = useState("grid"); // grid or list
+    const [favoriteRecipes, setFavoriteRecipes] = useState([]);
+    const [error, setError] = useState(null);
+    const { user } = useAuth();
 
-    // Mock data untuk resep favorit
-    const [favoriteRecipes, setFavoriteRecipes] = useState([
+    useEffect(() => {
+        if (user) {
+            fetchFavoriteRecipes();
+        }
+    }, [user]);
+
+    const fetchFavoriteRecipes = async () => {
+        try {
+            setLoading(true);
+            const response = await api.recipes.getFavorites();
+            
+            // Transform recipes to add author field for RecipeCard compatibility
+            const transformedRecipes = (response.data.recipes || []).map(recipe => ({
+                ...recipe,
+                author: recipe.user?.username || recipe.user?.full_name || 'Unknown Chef'
+            }));
+            
+            setFavoriteRecipes(transformedRecipes);
+        } catch (err) {
+            console.error('Error fetching favorite recipes:', err);
+            setError('Gagal mengambil data resep favorit');
+            // Use mock data as fallback
+            setFavoriteRecipes(mockFavoriteRecipes);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleToggleFavorite = async (recipeId) => {
+        try {
+            await api.recipes.toggleFavorite(recipeId);
+            // Refresh favorite recipes
+            fetchFavoriteRecipes();
+        } catch (err) {
+            console.error('Error toggling favorite:', err);
+        }
+    };
+
+    // Mock data untuk fallback
+    const mockFavoriteRecipes = [
         {
             id: 1,
             title: "Nasi Goreng Kampung",
             description: "Nasi goreng dengan cita rasa tradisional Indonesia yang autentik",
             image: "https://images.unsplash.com/photo-1603133872878-684f208fb84b?w=400&h=300&fit=crop",
-            rating: 4.8,
-            cookTime: 25,
+            average_rating: 4.8,
+            cook_time: 25,
             difficulty: "Easy",
-            author: "Chef Sari",
-            likes: 245,
-            views: 1200,
-            category: "main-course",
-            isFavorited: true,
-            favoritedAt: "2024-01-15",
+            user: { name: "Chef Sari" },
+            view_count: 1200,
+            category: { name: "Hidangan Utama" },
+            is_favorited: true,
+            created_at: "2024-01-15",
             notes: "Resep favorit untuk sarapan keluarga"
         },
         {
@@ -34,365 +76,254 @@ const FavoritePage = () => {
             title: "Rendang Daging Sapi",
             description: "Rendang autentik dengan rempah-rempah pilihan dan bumbu yang meresap",
             image: "https://images.unsplash.com/photo-1562967916-eb82221dfb92?w=400&h=300&fit=crop",
-            rating: 4.9,
-            cookTime: 180,
+            average_rating: 4.9,
+            cook_time: 180,
             difficulty: "Hard",
-            author: "Chef Budi",
-            likes: 389,
-            views: 2100,
-            category: "main-course",
-            isFavorited: true,
-            favoritedAt: "2024-01-10",
+            user: { name: "Chef Budi" },
+            view_count: 2100,
+            category: { name: "Hidangan Utama" },
+            is_favorited: true,
+            created_at: "2024-01-10",
             notes: "Sempurna untuk acara spesial"
-        },
-        {
-            id: 4,
-            title: "Klepon",
-            description: "Kue tradisional dengan isian gula merah yang manis",
-            image: "https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=400&h=300&fit=crop",
-            rating: 4.7,
-            cookTime: 45,
-            difficulty: "Medium",
-            author: "Chef Maya",
-            likes: 203,
-            views: 950,
-            category: "dessert",
-            isFavorited: true,
-            favoritedAt: "2024-01-08",
-            notes: "Anak-anak suka sekali"
-        },
-        {
-            id: 7,
-            title: "Soto Ayam Lamongan",
-            description: "Soto ayam khas Lamongan dengan kuah yang gurih dan segar",
-            image: "https://images.unsplash.com/photo-1569718212165-3a8278d5f624?w=400&h=300&fit=crop",
-            rating: 4.6,
-            cookTime: 60,
-            difficulty: "Medium",
-            author: "Chef Agus",
-            likes: 167,
-            views: 890,
-            category: "main-course",
-            isFavorited: true,
-            favoritedAt: "2024-01-05",
-            notes: "Cocok untuk cuaca dingin"
-        },
-        {
-            id: 8,
-            title: "Es Cendol Dawet",
-            description: "Minuman tradisional yang menyegarkan dengan santan dan gula merah",
-            image: "https://images.unsplash.com/photo-1551024506-0bccd828d307?w=400&h=300&fit=crop",
-            rating: 4.5,
-            cookTime: 30,
-            difficulty: "Easy",
-            author: "Chef Lisa",
-            likes: 198,
-            views: 1050,
-            category: "beverage",
-            isFavorited: true,
-            favoritedAt: "2024-01-03",
-            notes: "Favorit saat cuaca panas"
         }
-    ]);
-
-    // Categories untuk filter
-    const categories = [
-        { id: "all", name: "Semua Kategori" },
-        { id: "main-course", name: "Hidangan Utama" },
-        { id: "appetizer", name: "Pembuka" },
-        { id: "dessert", name: "Penutup" },
-        { id: "beverage", name: "Minuman" },
-        { id: "snack", name: "Camilan" },
     ];
 
     // Filter dan sort resep favorit
     const filteredRecipes = favoriteRecipes.filter(recipe => {
         const matchesSearch = recipe.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            recipe.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            recipe.author.toLowerCase().includes(searchTerm.toLowerCase());
-        const matchesCategory = filterBy === "all" || recipe.category === filterBy;
+            recipe.description.toLowerCase().includes(searchTerm.toLowerCase());
+        const matchesFilter = filterBy === "all" ||
+            (filterBy === "easy" && recipe.difficulty === "Easy") ||
+            (filterBy === "medium" && recipe.difficulty === "Medium") ||
+            (filterBy === "hard" && recipe.difficulty === "Hard");
 
-        return matchesSearch && matchesCategory;
+        return matchesSearch && matchesFilter;
     }).sort((a, b) => {
         switch (sortBy) {
             case "newest":
-                return new Date(b.favoritedAt) - new Date(a.favoritedAt);
+                return new Date(b.created_at) - new Date(a.created_at);
             case "oldest":
-                return new Date(a.favoritedAt) - new Date(b.favoritedAt);
+                return new Date(a.created_at) - new Date(b.created_at);
             case "rating":
-                return b.rating - a.rating;
-            case "alphabetical":
+                return (b.average_rating || 0) - (a.average_rating || 0);
+            case "name":
                 return a.title.localeCompare(b.title);
-            case "cookTime":
-                return a.cookTime - b.cookTime;
             default:
                 return 0;
         }
     });
 
-    const handleRemoveFromFavorites = (recipeId) => {
-        setFavoriteRecipes(prev => prev.filter(recipe => recipe.id !== recipeId));
+    const handleRemoveFromFavorites = async (recipeId) => {
+        try {
+            await handleToggleFavorite(recipeId);
+        } catch (err) {
+            console.error('Error removing from favorites:', err);
+        }
     };
 
-    const handleAddNote = (recipeId, note) => {
-        setFavoriteRecipes(prev =>
-            prev.map(recipe =>
-                recipe.id === recipeId ? { ...recipe, notes: note } : recipe
-            )
+    if (!user) {
+        return (
+            <div className="min-h-screen bg-base-200">
+                <div className="flex items-center justify-center py-20">
+                    <div className="text-center">
+                        <div className="mb-4 text-6xl text-gray-300">🔒</div>
+                        <h2 className="mb-4 text-2xl font-bold text-gray-700">Login Diperlukan</h2>
+                        <p className="mb-6 text-gray-600">Silakan login untuk melihat resep favorit Anda</p>
+                        <Link to="/login" className="btn btn-primary">
+                            Login Sekarang
+                        </Link>
+                    </div>
+                </div>
+            </div>
         );
-    };
+    }
 
     return (
         <div className="min-h-screen bg-base-200">
             {/* Header Section */}
-            <div className="bg-gradient-to-r from-pink-500 to-rose-500 text-white">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+            <div className="text-white bg-gradient-to-r from-pink-500 to-red-500">
+                <div className="px-4 py-12 mx-auto max-w-7xl sm:px-6 lg:px-8">
                     <div className="text-center">
-                        <div className="flex justify-center mb-4">
-                            <FaHeart className="text-6xl" />
+                        <div className="flex items-center justify-center mb-4">
+                            <FaHeart className="mr-3 text-4xl" />
+                            <h1 className="text-4xl font-bold">Resep Favorit</h1>
                         </div>
-                        <h1 className="text-4xl font-bold mb-4">
-                            Resep Favorit Saya
-                        </h1>
-                        <p className="text-xl opacity-90 mb-8">
-                            Koleksi resep pilihan yang sudah Anda simpan
+                        <p className="mb-8 text-xl opacity-90">
+                            Koleksi resep pilihan yang telah Anda simpan
                         </p>
 
-                        {/* Stats */}
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-2xl mx-auto">
-                            <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4">
+                        {/* Quick Stats */}
+                        <div className="flex justify-center gap-8 mt-8">
+                            <div className="text-center">
                                 <div className="text-3xl font-bold">{favoriteRecipes.length}</div>
-                                <div className="text-sm opacity-80">Total Favorit</div>
+                                <div className="text-sm opacity-75">Total Favorit</div>
                             </div>
-                            <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4">
+                            <div className="text-center">
                                 <div className="text-3xl font-bold">
-                                    {Math.round(favoriteRecipes.reduce((sum, recipe) => sum + recipe.rating, 0) / favoriteRecipes.length * 10) / 10}
+                                    {favoriteRecipes.length > 0 ?
+                                        (favoriteRecipes.reduce((avg, recipe) => avg + (recipe.average_rating || 0), 0) / favoriteRecipes.length).toFixed(1)
+                                        : 0}
                                 </div>
-                                <div className="text-sm opacity-80">Rating Rata-rata</div>
-                            </div>
-                            <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4">
-                                <div className="text-3xl font-bold">
-                                    {Math.round(favoriteRecipes.reduce((sum, recipe) => sum + recipe.cookTime, 0) / favoriteRecipes.length)}
-                                </div>
-                                <div className="text-sm opacity-80">Waktu Masak Rata-rata (menit)</div>
+                                <div className="text-sm opacity-75">Rating Rata-rata</div>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-                {favoriteRecipes.length === 0 ? (
-                    // Empty State
-                    <div className="text-center py-16">
-                        <div className="text-8xl text-gray-300 mb-6">💝</div>
-                        <h2 className="text-3xl font-bold text-gray-600 mb-4">
-                            Belum Ada Resep Favorit
-                        </h2>
-                        <p className="text-gray-500 mb-8 text-lg max-w-md mx-auto">
-                            Mulai jelajahi resep-resep menarik dan simpan yang paling Anda sukai
-                        </p>
-                        <Link
-                            to="/categories"
-                            className="btn btn-primary btn-lg"
-                        >
-                            <FaSearch className="mr-2" />
-                            Jelajahi Resep
-                        </Link>
+            <div className="px-4 py-8 mx-auto max-w-7xl sm:px-6 lg:px-8">
+                {/* Controls */}
+                <div className="flex flex-col gap-4 mb-8 sm:flex-row sm:items-center sm:justify-between">
+                    {/* Search */}
+                    <div className="relative flex-1 max-w-md">
+                        <FaSearch className="absolute text-gray-400 transform -translate-y-1/2 left-3 top-1/2" />
+                        <input
+                            type="text"
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                            placeholder="Cari resep favorit..."
+                            className="w-full py-2 pl-10 pr-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent"
+                        />
                     </div>
-                ) : (
-                    <>
-                        {/* Controls */}
-                        <div className="bg-base-100 rounded-lg shadow-md p-6 mb-8">
-                            <div className="flex flex-col lg:flex-row gap-4 items-center justify-between">
-                                {/* Search */}
-                                <div className="flex-1 max-w-md">
-                                    <div className="relative">
-                                        <input
-                                            type="text"
-                                            value={searchTerm}
-                                            onChange={(e) => setSearchTerm(e.target.value)}
-                                            placeholder="Cari resep favorit..."
-                                            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent"
-                                        />
-                                        <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                                    </div>
-                                </div>
 
-                                {/* Filters */}
-                                <div className="flex gap-4 items-center">
-                                    <select
-                                        value={filterBy}
-                                        onChange={(e) => setFilterBy(e.target.value)}
-                                        className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent"
-                                    >
-                                        {categories.map(category => (
-                                            <option key={category.id} value={category.id}>
-                                                {category.name}
-                                            </option>
-                                        ))}
-                                    </select>
+                    {/* Filters and View Mode */}
+                    <div className="flex gap-4">
+                        {/* Filter */}
+                        <select
+                            value={filterBy}
+                            onChange={(e) => setFilterBy(e.target.value)}
+                            className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent"
+                        >
+                            <option value="all">Semua Tingkat</option>
+                            <option value="easy">Mudah</option>
+                            <option value="medium">Sedang</option>
+                            <option value="hard">Sulit</option>
+                        </select>
 
-                                    <select
-                                        value={sortBy}
-                                        onChange={(e) => setSortBy(e.target.value)}
-                                        className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent"
-                                    >
-                                        <option value="newest">Terbaru Disimpan</option>
-                                        <option value="oldest">Terlama Disimpan</option>
-                                        <option value="rating">Rating Tertinggi</option>
-                                        <option value="alphabetical">A-Z</option>
-                                        <option value="cookTime">Tercepat</option>
-                                    </select>
+                        {/* Sort */}
+                        <select
+                            value={sortBy}
+                            onChange={(e) => setSortBy(e.target.value)}
+                            className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent"
+                        >
+                            <option value="newest">Terbaru Ditambahkan</option>
+                            <option value="oldest">Terlama Ditambahkan</option>
+                            <option value="rating">Rating Tertinggi</option>
+                            <option value="name">Nama A-Z</option>
+                        </select>
 
-                                    {/* View Mode Toggle */}
-                                    <div className="flex bg-gray-100 rounded-lg p-1">
-                                        <button
-                                            onClick={() => setViewMode("grid")}
-                                            className={`p-2 rounded ${viewMode === "grid" ? "bg-white shadow" : ""}`}
-                                        >
-                                            <div className="grid grid-cols-2 gap-1 w-4 h-4">
-                                                <div className="bg-gray-400 rounded-sm"></div>
-                                                <div className="bg-gray-400 rounded-sm"></div>
-                                                <div className="bg-gray-400 rounded-sm"></div>
-                                                <div className="bg-gray-400 rounded-sm"></div>
-                                            </div>
-                                        </button>
-                                        <button
-                                            onClick={() => setViewMode("list")}
-                                            className={`p-2 rounded ${viewMode === "list" ? "bg-white shadow" : ""}`}
-                                        >
-                                            <div className="space-y-1 w-4 h-4">
-                                                <div className="bg-gray-400 h-1 rounded"></div>
-                                                <div className="bg-gray-400 h-1 rounded"></div>
-                                                <div className="bg-gray-400 h-1 rounded"></div>
-                                            </div>
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* Results count */}
-                            <div className="mt-4 pt-4 border-t border-gray-200">
-                                <p className="text-gray-600">
-                                    Menampilkan {filteredRecipes.length} dari {favoriteRecipes.length} resep favorit
-                                    {searchTerm && ` untuk "${searchTerm}"`}
-                                </p>
-                            </div>
+                        {/* View Mode Toggle */}
+                        <div className="flex border border-gray-300 rounded-lg">
+                            <button
+                                onClick={() => setViewMode("grid")}
+                                className={`px-3 py-2 rounded-l-lg ${viewMode === "grid" ? "bg-pink-500 text-white" : "text-gray-600 hover:bg-gray-50"}`}
+                            >
+                                Grid
+                            </button>
+                            <button
+                                onClick={() => setViewMode("list")}
+                                className={`px-3 py-2 rounded-r-lg ${viewMode === "list" ? "bg-pink-500 text-white" : "text-gray-600 hover:bg-gray-50"}`}
+                            >
+                                List
+                            </button>
                         </div>
+                    </div>
+                </div>
 
-                        {/* Loading State */}
-                        {loading && (
-                            <div className="flex justify-center py-12">
-                                <LoadingSpinner />
+                {/* Loading State */}
+                {loading && (
+                    <div className="flex justify-center py-12">
+                        <LoadingSpinner />
+                    </div>
+                )}
+
+                {/* Error State */}
+                {error && !loading && (
+                    <div className="py-12 text-center">
+                        <div className="mb-4 text-6xl text-red-300">⚠️</div>
+                        <h3 className="mb-2 text-xl font-semibold text-red-600">
+                            Terjadi Kesalahan
+                        </h3>
+                        <p className="text-red-500">{error}</p>
+                        <button
+                            onClick={fetchFavoriteRecipes}
+                            className="mt-4 btn btn-primary"
+                        >
+                            Coba Lagi
+                        </button>
+                    </div>
+                )}
+
+                {/* Recipes Content */}
+                {!loading && !error && (
+                    <>
+                        {filteredRecipes.length > 0 ? (
+                            <div className={`${viewMode === "grid"
+                                ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+                                : "space-y-4"}`}
+                            >
+                                {filteredRecipes.map((recipe) => (
+                                    <div key={recipe.id} className="relative group">
+                                        <RecipeCard
+                                            recipe={recipe}
+                                            className={`${viewMode === "list" ? "flex flex-row" : ""} transition-transform duration-200 hover:scale-105`}
+                                        />
+
+                                        {/* Favorite Actions */}
+                                        <div className="absolute top-2 right-2">
+                                            <div className="flex gap-2">
+                                                <button
+                                                    onClick={() => handleRemoveFromFavorites(recipe.id)}
+                                                    className="p-2 text-white transition-colors bg-red-500 rounded-full shadow-lg hover:bg-red-600"
+                                                    title="Hapus dari favorit"
+                                                >
+                                                    <FaTrash className="text-sm" />
+                                                </button>
+                                                <button
+                                                    onClick={() => {
+                                                        navigator.share?.({
+                                                            title: recipe.title,
+                                                            text: recipe.description,
+                                                            url: window.location.origin + `/recipes/${recipe.id}`
+                                                        }) || console.log('Share not supported');
+                                                    }}
+                                                    className="p-2 text-white transition-colors bg-blue-500 rounded-full shadow-lg hover:bg-blue-600"
+                                                    title="Bagikan resep"
+                                                >
+                                                    <FaShare className="text-sm" />
+                                                </button>
+                                            </div>
+                                        </div>
+
+                                        {/* Favorite Notes (if any) */}
+                                        {recipe.notes && (
+                                            <div className="absolute inset-x-0 bottom-0 p-3 text-sm text-white transition-opacity bg-black bg-opacity-75 rounded-b-lg opacity-0 group-hover:opacity-100">
+                                                <FaBookmark className="inline mr-1" />
+                                                {recipe.notes}
+                                            </div>
+                                        )}
+                                    </div>
+                                ))}
                             </div>
-                        )}
-
-                        {/* Results */}
-                        {!loading && (
-                            <>
-                                {filteredRecipes.length > 0 ? (
-                                    <div className={viewMode === "grid" ?
-                                        "grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6" :
-                                        "space-y-4"
-                                    }>
-                                        {filteredRecipes.map((recipe) => (
-                                            viewMode === "grid" ? (
-                                                <div key={recipe.id} className="relative group">
-                                                    <RecipeCard
-                                                        recipe={recipe}
-                                                        className="hover:scale-105 transition-transform duration-200"
-                                                    />
-
-                                                    {/* Favorite Actions Overlay */}
-                                                    <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                        <div className="flex flex-col gap-2">
-                                                            <button
-                                                                onClick={() => handleRemoveFromFavorites(recipe.id)}
-                                                                className="bg-red-500 hover:bg-red-600 text-white p-2 rounded-full shadow-lg transition-colors"
-                                                                title="Hapus dari favorit"
-                                                            >
-                                                                <FaTrash className="text-sm" />
-                                                            </button>
-                                                            <button
-                                                                className="bg-blue-500 hover:bg-blue-600 text-white p-2 rounded-full shadow-lg transition-colors"
-                                                                title="Share resep"
-                                                            >
-                                                                <FaShare className="text-sm" />
-                                                            </button>
-                                                        </div>
-                                                    </div>
-
-                                                    {/* Notes Section */}
-                                                    {recipe.notes && (
-                                                        <div className="absolute bottom-2 left-2 right-2 bg-black/70 text-white p-2 rounded text-sm opacity-0 group-hover:opacity-100 transition-opacity">
-                                                            <FaBookmark className="inline mr-1" />
-                                                            {recipe.notes}
-                                                        </div>
-                                                    )}
-                                                </div>
-                                            ) : (
-                                                // List View
-                                                <div key={recipe.id} className="bg-base-100 rounded-lg shadow-md p-4 flex gap-4">
-                                                    <img
-                                                        src={recipe.image}
-                                                        alt={recipe.title}
-                                                        className="w-24 h-24 object-cover rounded-lg flex-shrink-0"
-                                                    />
-                                                    <div className="flex-1">
-                                                        <div className="flex justify-between items-start mb-2">
-                                                            <h3 className="font-semibold text-lg">{recipe.title}</h3>
-                                                            <div className="flex gap-2">
-                                                                <button
-                                                                    onClick={() => handleRemoveFromFavorites(recipe.id)}
-                                                                    className="text-red-500 hover:text-red-700"
-                                                                    title="Hapus dari favorit"
-                                                                >
-                                                                    <FaTrash />
-                                                                </button>
-                                                                <button
-                                                                    className="text-blue-500 hover:text-blue-700"
-                                                                    title="Share resep"
-                                                                >
-                                                                    <FaShare />
-                                                                </button>
-                                                            </div>
-                                                        </div>
-                                                        <p className="text-gray-600 text-sm mb-2 line-clamp-2">{recipe.description}</p>
-                                                        <div className="flex items-center gap-4 text-sm text-gray-500">
-                                                            <span className="flex items-center gap-1">
-                                                                <FaStar className="text-yellow-400" />
-                                                                {recipe.rating}
-                                                            </span>
-                                                            <span className="flex items-center gap-1">
-                                                                <FaClock />
-                                                                {recipe.cookTime} menit
-                                                            </span>
-                                                            <span>oleh {recipe.author}</span>
-                                                        </div>
-                                                        {recipe.notes && (
-                                                            <div className="mt-2 p-2 bg-gray-50 rounded text-sm">
-                                                                <FaBookmark className="inline mr-1 text-pink-500" />
-                                                                {recipe.notes}
-                                                            </div>
-                                                        )}
-                                                    </div>
-                                                </div>
-                                            )
-                                        ))}
-                                    </div>
-                                ) : (
-                                    <div className="text-center py-12">
-                                        <div className="text-6xl text-gray-300 mb-4">🔍</div>
-                                        <h3 className="text-xl font-semibold text-gray-600 mb-2">
-                                            Tidak ada resep ditemukan
-                                        </h3>
-                                        <p className="text-gray-500">
-                                            Coba ubah kata kunci pencarian atau filter Anda
-                                        </p>
-                                    </div>
-                                )}
-                            </>
+                        ) : (
+                            <div className="py-12 text-center">
+                                <div className="mb-4 text-6xl text-gray-300">💔</div>
+                                <h3 className="mb-2 text-xl font-semibold text-gray-600">
+                                    Belum Ada Resep Favorit
+                                </h3>
+                                <p className="mb-6 text-gray-500">
+                                    {searchTerm ?
+                                        `Tidak ada resep favorit yang cocok dengan "${searchTerm}"` :
+                                        "Mulai jelajahi resep dan tambahkan ke favorit Anda"
+                                    }
+                                </p>
+                                <Link
+                                    to="/recipes"
+                                    className="btn btn-primary"
+                                >
+                                    Jelajahi Resep
+                                </Link>
+                            </div>
                         )}
                     </>
                 )}

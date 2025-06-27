@@ -9,8 +9,12 @@ import {
   FaHeart,
   FaCog,
   FaSignOutAlt,
+  FaCrown,
+  FaChartBar,
+  FaUsers,
 } from "react-icons/fa";
 import { useAuth } from "../../contexts/AuthContext";
+import { canCreateRecipes, canAccessAdmin, getRoleDisplayName } from "../../utils/roleUtils";
 
 const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -62,28 +66,30 @@ const Navbar = () => {
               <span className="mr-2"></span>
               Home
             </Link>
-            <Link
-              to="/search"
-              className="text-orange-700 hover:text-orange-900 hover:underline font-normal font-brand transition-colors duration-200 flex items-center px-3 py-2 rounded-lg hover:bg-orange-50"
-            >
-              <span className="mr-2"></span>
-              Browse Recipes
-            </Link>
-            <Link
-              to="/categories"
-              className="text-orange-700 hover:text-orange-900 hover:underline font-normal  font-brand transition-colors duration-200 flex items-center px-3 py-2 rounded-lg hover:bg-orange-50"
-            >
-              <span className="mr-2"></span>
-              Categories
-            </Link>
             {isAuthenticated && (
-              <Link
-                to="/favorites"
-                className="text-orange-700 hover:text-orange-900 hover:underline font-normal transition-colors duration-200 flex items-center px-3 py-2 rounded-lg hover:bg-orange-50"
-              >
-                <span className="mr-2"></span>
-                My Favorites
-              </Link>
+              <>
+                <Link
+                  to="/search"
+                  className="text-orange-700 hover:text-orange-900 hover:underline font-normal font-brand transition-colors duration-200 flex items-center px-3 py-2 rounded-lg hover:bg-orange-50"
+                >
+                  <span className="mr-2"></span>
+                  Browse Recipes
+                </Link>
+                <Link
+                  to="/categories"
+                  className="text-orange-700 hover:text-orange-900 hover:underline font-normal  font-brand transition-colors duration-200 flex items-center px-3 py-2 rounded-lg hover:bg-orange-50"
+                >
+                  <span className="mr-2"></span>
+                  Categories
+                </Link>
+                <Link
+                  to="/favorites"
+                  className="text-orange-700 hover:text-orange-900 hover:underline font-normal transition-colors duration-200 flex items-center px-3 py-2 rounded-lg hover:bg-orange-50"
+                >
+                  <span className="mr-2"></span>
+                  My Favorites
+                </Link>
+              </>
             )}
           </div>
 
@@ -91,13 +97,15 @@ const Navbar = () => {
           <div className="hidden lg:flex items-center gap-4">
             {isAuthenticated ? (
               <>
-                <Link
-                  to="/recipes/create"
-                  className="text-orange-700 hover:text-orange-900 hover:underline font-normal transition-colors duration-200 flex items-center px-3 py-2 rounded-lg hover:bg-orange-50"
-                >
-                  <FaPlus className="mr-2" />
-                  Create Recipe
-                </Link>
+                {canCreateRecipes(user) && (
+                  <Link
+                    to="/recipes/create"
+                    className="text-orange-700 hover:text-orange-900 hover:underline font-normal transition-colors duration-200 flex items-center px-3 py-2 rounded-lg hover:bg-orange-50"
+                  >
+                    <FaPlus className="mr-2" />
+                    Create Recipe
+                  </Link>
+                )}
 
                 <div className="relative group">
                   <button className="flex items-center p-2 rounded-xl hover:bg-orange-100 transition-colors">
@@ -113,6 +121,11 @@ const Navbar = () => {
 
                   <div className="absolute right-0 top-full mt-2 w-52 bg-white rounded-xl shadow-xl border opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
                     <div className="p-2">
+                      <div className="px-3 py-2 border-b border-gray-100 mb-1">
+                        <span className="text-xs text-gray-500">
+                          {getRoleDisplayName(user?.role)}
+                        </span>
+                      </div>
                       <Link
                         to="/profile"
                         className="text-orange-700 hover:text-orange-900 hover:underline font-normal transition-colors duration-200 flex items-center px-3 py-2 rounded-lg hover:bg-orange-50"
@@ -134,6 +147,18 @@ const Navbar = () => {
                         <FaCog className="text-orange-800 mr-2" />
                         Settings
                       </Link>
+                      {canAccessAdmin(user) && (
+                        <>
+                          <div className="border-t border-gray-200 my-1"></div>
+                          <Link
+                            to="/admin"
+                            className="text-purple-700 hover:text-purple-900 hover:underline font-normal transition-colors duration-200 flex items-center px-3 py-2 rounded-lg hover:bg-purple-50"
+                          >
+                            <FaCrown className="text-purple-800 mr-2" />
+                            Admin Panel
+                          </Link>
+                        </>
+                      )}
                       <div className="border-t border-gray-200 my-1"></div>
                       <button
                         onClick={handleLogout}
@@ -179,20 +204,22 @@ const Navbar = () => {
         </div>
 
         {/* Mobile Search Bar */}
-        <div className="md:hidden pb-4">
-          <form onSubmit={handleSearch}>
-            <div className="relative">
-              <input
-                type="text"
-                placeholder="Search recipes..."
-                className="w-full pl-10 pr-4 py-3 rounded-xl border-2 border-gray-200 focus:border-orange-300 focus:outline-none transition-all duration-200"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
-              <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-            </div>
-          </form>
-        </div>
+        {isAuthenticated && (
+          <div className="md:hidden pb-4">
+            <form onSubmit={handleSearch}>
+              <div className="relative">
+                <input
+                  type="text"
+                  placeholder="Search recipes..."
+                  className="w-full pl-10 pr-4 py-3 rounded-xl border-2 border-gray-200 focus:border-orange-300 focus:outline-none transition-all duration-200"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                />
+                <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+              </div>
+            </form>
+          </div>
+        )}
       </div>
 
       {/* Enhanced Mobile Menu */}
@@ -207,20 +234,25 @@ const Navbar = () => {
               >
                 Home
               </Link>
-              <Link
-                to="/search"
-                onClick={() => setIsMenuOpen(false)}
-                className="text-orange-700 hover:text-orange-900 hover:underline font-normal font-brand transition-colors duration-200 flex items-center px-3 py-2 rounded-lg hover:bg-orange-50"
-              >
-                Browse Recipes
-              </Link>
-              <Link
-                to="/categories"
-                onClick={() => setIsMenuOpen(false)}
-                className="text-orange-700 hover:text-orange-900 hover:underline font-normal font-brand transition-colors duration-200 flex items-center px-3 py-2 rounded-lg hover:bg-orange-50"
-              >
-                Categories
-              </Link>
+              
+              {isAuthenticated ? (
+                <>
+                  <Link
+                    to="/search"
+                    onClick={() => setIsMenuOpen(false)}
+                    className="text-orange-700 hover:text-orange-900 hover:underline font-normal font-brand transition-colors duration-200 flex items-center px-3 py-2 rounded-lg hover:bg-orange-50"
+                  >
+                    Browse Recipes
+                  </Link>
+                  <Link
+                    to="/categories"
+                    onClick={() => setIsMenuOpen(false)}
+                    className="text-orange-700 hover:text-orange-900 hover:underline font-normal font-brand transition-colors duration-200 flex items-center px-3 py-2 rounded-lg hover:bg-orange-50"
+                  >
+                    Categories
+                  </Link>
+                </>
+              ) : null}
 
               {isAuthenticated ? (
                 <>
@@ -231,14 +263,16 @@ const Navbar = () => {
                   >
                     My Favorites
                   </Link>
-                  <Link
-                    to="/recipes/create"
-                    onClick={() => setIsMenuOpen(false)}
-                    className="flex items-center w-full text-left px-4 py-3 bg-gradient-to-r from-orange-400 to-red-400 text-white rounded-lg"
-                  >
-                    <FaPlus className="mr-3" />
-                    Create Recipe
-                  </Link>
+                  {canCreateRecipes(user) && (
+                    <Link
+                      to="/recipes/create"
+                      onClick={() => setIsMenuOpen(false)}
+                      className="flex items-center w-full text-left px-4 py-3 bg-gradient-to-r from-orange-400 to-red-400 text-white rounded-lg"
+                    >
+                      <FaPlus className="mr-3" />
+                      Create Recipe
+                    </Link>
+                  )}
                   <Link
                     to="/profile"
                     onClick={() => setIsMenuOpen(false)}

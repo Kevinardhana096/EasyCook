@@ -1,8 +1,9 @@
 from flask import Blueprint, jsonify, request
 from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity
 from app import db
-from app.models import User
+from app.models import User, Recipe  # Add Recipe import
 from app.utils.decorators import admin_required
+from sqlalchemy.orm import joinedload  # Add joinedload import
 import traceback
 
 auth_bp = Blueprint('auth', __name__)
@@ -265,6 +266,56 @@ def verify_user(user_id):
         db.session.rollback()
         return jsonify({'message': 'Failed to update user verification', 'error': str(e)}), 500
 
+@auth_bp.route('/register-admin', methods=['POST'])
+@jwt_required()
+@admin_required
+def register_admin():
+    """Admin endpoint to register users with specific roles"""
+    try:
+        data = request.get_json()
+        print(f"📝 Admin registration attempt with data: {data}")
+        
+        if not data or not data.get('username') or not data.get('email') or not data.get('password'):
+            return jsonify({'message': 'Username, email, and password are required'}), 400
+        
+        # Check if user exists
+        existing_email = User.query.filter_by(email=data['email']).first()
+        if existing_email:
+            return jsonify({'message': 'Email already registered'}), 400
+        
+        existing_username = User.query.filter_by(username=data['username']).first()
+        if existing_username:
+            return jsonify({'message': 'Username already taken'}), 400
+        
+        # Validate role
+        role = data.get('role', 'user')
+        if role not in ['user', 'chef', 'admin']:
+            return jsonify({'message': 'Invalid role. Must be user, chef, or admin'}), 400
+        
+        # Create user
+        user = User(
+            username=data['username'],
+            email=data['email'],
+            full_name=data.get('full_name', data['username']),
+            bio=data.get('bio', ''),
+            role=role,
+            is_active=data.get('is_active', True),
+            is_verified=data.get('is_verified', False)
+        )
+        user.set_password(data['password'])
+        
+        db.session.add(user)
+        db.session.commit()
+        
+        return jsonify({
+            'message': f'User created successfully with role: {role}',
+            'user': user.to_dict(include_private=True)
+        }), 201
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'message': 'User creation failed', 'error': str(e)}), 500
+
 @auth_bp.route('/debug/users-count', methods=['GET'])
 def debug_users_count():
     """Debug endpoint to check user count in database"""
@@ -287,3 +338,173 @@ def debug_users_count():
         
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+
+@auth_bp.route('/debug/test-login', methods=['POST'])
+def test_login():
+    """Test login endpoint with sample credentials"""
+    try:
+        data = request.get_json()
+        role = data.get('role', 'admin')
+        
+        # Sample credentials for testing
+        credentials = {
+            'admin': {'email': 'admin@cookeasy.com', 'password': 'admin123'},
+            'chef': {'email': 'chef@cookeasy.com', 'password': 'chef123'},
+            'user': {'email': 'sari@example.com', 'password': 'sari123'}
+        }
+        
+        if role not in credentials:
+            return jsonify({'message': 'Invalid role. Use admin, chef, or user'}), 400
+        
+        cred = credentials[role]
+        user = User.query.filter_by(email=cred['email']).first()
+        
+        if not user or not user.check_password(cred['password']):
+            return jsonify({'message': 'Test user not found or password mismatch'}), 401
+        
+        # Generate token
+        access_token = create_access_token(identity=str(user.id))
+        
+        return jsonify({
+            'message': f'Test login successful as {role}',
+            'access_token': access_token,
+            'user': user.to_dict(include_private=True),
+            'credentials_used': {
+                'email': cred['email'],
+                'password': cred['password']
+            }
+        }), 200
+        
+    except Exception as e:
+        return jsonify({'message': 'Test login failed', 'error': str(e)}), 500
+
+# User profile and recipes endpoints
+@auth_bp.route('/users/<int:user_id>', methods=['GET'])
+def get_user_profile(user_id):
+    """Get user profile by ID"""
+    try:
+        user = User.query.get_or_404(user_id)
+        return jsonify({
+            'message': 'User profile retrieved successfully',
+            'user': user.to_dict()
+        }), 200
+        
+    except Exception as e:
+        return jsonify({'message': 'Failed to get user profile', 'error': str(e)}), 500
+
+@auth_bp.route('/users/me/recipes', methods=['GET'])
+@jwt_required()
+def get_my_recipes():
+    """Get current user's recipes (including drafts)"""
+    try:
+        current_user_id = get_jwt_identity()
+        page = int(request.args.get('page', 1))
+        per_page = int(request.args.get('per_page', 12))
+        status = request.args.get('status', 'all')  # all, published, draft
+        
+        print(f"📝 get_my_recipes called by user {current_user_id}, status={status}, page={page}")
+        
+        # Use joinedload to include user and category data
+        recipes_query = Recipe.query.options(
+            joinedload(Recipe.user),
+            joinedload(Recipe.category)
+        ).filter_by(user_id=current_user_id)
+        
+        # Apply status filter
+        if status == 'published':
+            recipes_query = recipes_query.filter_by(is_published=True)
+        elif status == 'draft':
+            recipes_query = recipes_query.filter_by(is_published=False)
+        # If status == 'all', show both published and draft recipes
+        
+        # Order by creation date (newest first)
+        recipes_query = recipes_query.order_by(Recipe.created_at.desc())
+        
+        # Get paginated results
+        paginated_recipes = recipes_query.paginate(
+            page=page, 
+            per_page=per_page, 
+            error_out=False
+        )
+        
+        print(f"📊 Found {paginated_recipes.total} total recipes for user {current_user_id}")
+        print(f"📄 Page {page}: {len(paginated_recipes.items)} recipes")
+        
+        recipes_data = [recipe.to_dict(include_details=False) for recipe in paginated_recipes.items]
+        for recipe in recipes_data:
+            print(f"  - Recipe ID {recipe['id']}: {recipe['title']} (published: {recipe['is_published']})")
+        
+        return jsonify({
+            'message': 'User recipes retrieved successfully',
+            'recipes': recipes_data,
+            'pagination': {
+                'page': page,
+                'per_page': per_page,
+                'total': paginated_recipes.total,
+                'pages': paginated_recipes.pages
+            }
+        }), 200
+        
+    except Exception as e:
+        print(f"❌ Error in get_my_recipes: {str(e)}")
+        return jsonify({'message': 'Failed to get user recipes', 'error': str(e)}), 500
+
+@auth_bp.route('/users/<int:user_id>/recipes', methods=['GET'])
+def get_user_recipes_by_id(user_id):
+    """Get recipes by specific user ID"""
+    try:
+        user = User.query.get_or_404(user_id)
+        page = int(request.args.get('page', 1))
+        per_page = int(request.args.get('per_page', 12))
+        
+        # Check if current user is viewing their own profile
+        current_user_id = None
+        is_own_profile = False
+        
+        try:
+            # Try to get current user if authenticated
+            from flask_jwt_extended import get_jwt_identity, verify_jwt_in_request
+            verify_jwt_in_request(optional=True)
+            current_user_id = get_jwt_identity()
+            if current_user_id:
+                current_user_id = int(current_user_id)
+                is_own_profile = current_user_id == user_id
+        except:
+            # Not authenticated, continue with public view
+            pass
+        
+        # Use joinedload to include user and category data
+        recipes_query = Recipe.query.options(
+            joinedload(Recipe.user),
+            joinedload(Recipe.category)
+        ).filter_by(user_id=user_id)
+        
+        # If viewing own profile, show all recipes (published + draft)
+        # If viewing others' profile, show only published recipes
+        if not is_own_profile:
+            recipes_query = recipes_query.filter_by(is_published=True)
+        
+        # Order by creation date (newest first)
+        recipes_query = recipes_query.order_by(Recipe.created_at.desc())
+        
+        # Get paginated results
+        paginated_recipes = recipes_query.paginate(
+            page=page, 
+            per_page=per_page, 
+            error_out=False
+        )
+        
+        return jsonify({
+            'message': 'User recipes retrieved successfully',
+            'recipes': [recipe.to_dict(include_details=False) for recipe in paginated_recipes.items],
+            'user': user.to_dict(),
+            'pagination': {
+                'page': page,
+                'per_page': per_page,
+                'total': paginated_recipes.total,
+                'pages': paginated_recipes.pages
+            }
+        }), 200
+        
+    except Exception as e:
+        return jsonify({'message': 'Failed to get user recipes', 'error': str(e)}), 500

@@ -19,7 +19,7 @@ class User(db.Model):
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
     # Relationships
-    recipes = db.relationship('Recipe', backref='author', lazy='dynamic')
+    recipes = db.relationship('Recipe', backref='user', lazy='dynamic')
     ratings = db.relationship('Rating', backref='user', lazy='dynamic')
     
     def set_password(self, password):
@@ -29,6 +29,12 @@ class User(db.Model):
         return check_password_hash(self.password_hash, password)
     
     def to_dict(self, include_private=False):
+        # Calculate recipe count
+        recipe_count = self.recipes.filter_by(is_published=True).count()
+        
+        # Calculate total likes across all published recipes
+        total_likes = sum(recipe.like_count or 0 for recipe in self.recipes.filter_by(is_published=True))
+        
         data = {
             'id': self.id,
             'username': self.username,
@@ -38,7 +44,9 @@ class User(db.Model):
             'profile_image': self.profile_image,
             'is_verified': self.is_verified,
             'created_at': self.created_at.isoformat() if self.created_at else None,
-            'updated_at': self.updated_at.isoformat() if self.updated_at else None
+            'updated_at': self.updated_at.isoformat() if self.updated_at else None,
+            'recipe_count': recipe_count,
+            'total_likes': total_likes
         }
         
         if include_private:

@@ -9,6 +9,7 @@ class Ingredient(db.Model):
     description = db.Column(db.Text)
     unit = db.Column(db.String(20), default='gram')  # gram, ml, piece, cup, etc.
     category = db.Column(db.String(50))  # protein, vegetable, spice, etc.
+    is_active = db.Column(db.Boolean, default=True, nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
@@ -25,6 +26,7 @@ class Ingredient(db.Model):
             'description': self.description,
             'unit': self.unit,
             'category': self.category,
+            'is_active': self.is_active,
             'created_at': self.created_at.isoformat() if self.created_at else None,
             'updated_at': self.updated_at.isoformat() if self.updated_at else None
         }

@@ -1,13 +1,91 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { FaSearch, FaUtensils, FaFire, FaCoffee, FaCookie, FaCarrot, FaStar, FaArrowRight } from "react-icons/fa";
+import { FaSearch, FaUtensils, FaFire, FaCoffee, FaCookie, FaCarrot, FaStar, FaArrowRight, FaSync } from "react-icons/fa";
 import CategoryCard from "../components/recipe/CategoryCard";
+import LoadingSpinner from "../components/common/LoadingSpinner";
+import api from "../api/recipes";
+import { useStats } from "../hooks/useStats";
 
 const CategoriesOverviewPage = () => {
     const [searchTerm, setSearchTerm] = useState("");
+    const [categories, setCategories] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
 
-    // Mock data untuk kategori dengan gambar
-    const categories = [
+    // Use stats hook for real-time statistics
+    const {
+        stats,
+        loading: statsLoading,
+        refreshStats,
+        lastUpdated
+    } = useStats(true, 180000); // Auto-refresh every 3 minutes
+
+    // Icon mapping for categories
+    const iconMap = {
+        'main-course': FaUtensils,
+        'appetizer': FaFire,
+        'dessert': FaCookie,
+        'beverage': FaCoffee,
+        'snack': FaCarrot,
+        'traditional': FaStar,
+        'vegetarian': FaCarrot,
+    };
+
+    // Color mapping for categories
+    const colorMap = {
+        'main-course': 'text-red-500',
+        'appetizer': 'text-yellow-500',
+        'dessert': 'text-pink-500',
+        'beverage': 'text-blue-500',
+        'snack': 'text-green-500',
+        'traditional': 'text-purple-500',
+        'vegetarian': 'text-green-600',
+    };
+
+    // Default images for categories
+    const imageMap = {
+        'main-course': 'https://images.unsplash.com/photo-1567620905732-2d1ec7ab7445?w=400&h=300&fit=crop',
+        'appetizer': 'https://images.unsplash.com/photo-1541795795328-f073b763494e?w=400&h=300&fit=crop',
+        'dessert': 'https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=400&h=300&fit=crop',
+        'beverage': 'https://images.unsplash.com/photo-1556679343-c7306c1976bc?w=400&h=300&fit=crop',
+        'snack': 'https://images.unsplash.com/photo-1621939514649-280e2ee25f60?w=400&h=300&fit=crop',
+        'traditional': 'https://images.unsplash.com/photo-1562967916-eb82221dfb92?w=400&h=300&fit=crop',
+        'vegetarian': 'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=400&h=300&fit=crop',
+    };
+
+    useEffect(() => {
+        fetchCategories();
+    }, []);
+
+    const fetchCategories = async () => {
+        try {
+            setLoading(true);
+            const response = await api.categories.getAll();
+
+            // Transform API data to match component format
+            const transformedCategories = response.data.categories.map(category => ({
+                id: category.slug || category.name.toLowerCase().replace(/\s+/g, '-'),
+                name: category.name,
+                description: category.description || `Resep ${category.name.toLowerCase()} yang lezat`,
+                image: category.image_url || imageMap[category.slug] || imageMap['main-course'],
+                count: category.recipe_count || 0,
+                icon: iconMap[category.slug] || 'utensils',
+                color: colorMap[category.slug] || 'text-gray-500',
+                featured: category.is_featured || false,
+                slug: category.slug
+            }));
+
+            setCategories(transformedCategories);
+        } catch (err) {
+            console.error('Error fetching categories:', err);
+            setError('Gagal mengambil data kategori');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    // Mock data untuk fallback jika API gagal
+    const mockCategories = [
         {
             id: "main-course",
             name: "Hidangan Utama",
@@ -27,71 +105,23 @@ const CategoriesOverviewPage = () => {
             icon: "fire",
             color: "text-yellow-500",
             featured: false
-        },
-        {
-            id: "dessert",
-            name: "Penutup",
-            description: "Makanan manis untuk menutup hidangan",
-            image: "https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=400&h=300&fit=crop",
-            count: 30,
-            icon: "cookie",
-            color: "text-pink-500",
-            featured: true
-        },
-        {
-            id: "beverage",
-            name: "Minuman",
-            description: "Minuman segar dan hangat untuk berbagai ocasion",
-            image: "https://images.unsplash.com/photo-1556679343-c7306c1976bc?w=400&h=300&fit=crop",
-            count: 20,
-            icon: "coffee",
-            color: "text-blue-500",
-            featured: false
-        },
-        {
-            id: "snack",
-            name: "Camilan",
-            description: "Makanan ringan untuk menemani waktu santai",
-            image: "https://images.unsplash.com/photo-1621939514649-280e2ee25f60?w=400&h=300&fit=crop",
-            count: 35,
-            icon: "carrot",
-            color: "text-green-500",
-            featured: false
-        },
-        {
-            id: "traditional",
-            name: "Makanan Tradisional",
-            description: "Resep-resep warisan nenek moyang yang autentik",
-            image: "https://images.unsplash.com/photo-1562967916-eb82221dfb92?w=400&h=300&fit=crop",
-            count: 40,
-            icon: "star",
-            color: "text-purple-500",
-            featured: true
-        },
-        {
-            id: "vegetarian",
-            name: "Vegetarian",
-            description: "Hidangan sehat tanpa daging untuk gaya hidup vegetarian",
-            image: "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=400&h=300&fit=crop",
-            count: 28,
-            icon: "carrot",
-            color: "text-green-600",
-            featured: false
-        },
-        {
-            id: "seafood",
-            name: "Makanan Laut",
-            description: "Olahan ikan dan seafood yang lezat dan bergizi",
-            image: "https://images.unsplash.com/photo-1559339352-11d035aa65de?w=400&h=300&fit=crop",
-            count: 22,
-            icon: "utensils",
-            color: "text-blue-600",
-            featured: false
         }
     ];
 
+    // Use API data if available, otherwise use mock data
+    const displayCategories = categories.length > 0 ? categories : (error ? mockCategories : []);
+
+    // Show loading spinner if loading
+    if (loading) {
+        return (
+            <div className="min-h-screen bg-base-200 flex items-center justify-center">
+                <LoadingSpinner />
+            </div>
+        );
+    }
+
     // Filter categories berdasarkan search
-    const filteredCategories = categories.filter(category =>
+    const filteredCategories = displayCategories.filter(category =>
         category.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         category.description.toLowerCase().includes(searchTerm.toLowerCase())
     );
@@ -100,7 +130,7 @@ const CategoriesOverviewPage = () => {
     const featuredCategories = filteredCategories.filter(cat => cat.featured);
     const regularCategories = filteredCategories.filter(cat => !cat.featured);
 
-    const totalRecipes = categories.reduce((sum, cat) => sum + cat.count, 0);
+    const totalRecipes = displayCategories.reduce((sum, cat) => sum + cat.count, 0);
 
     return (
         <div className="min-h-screen bg-base-200">
@@ -116,20 +146,35 @@ const CategoriesOverviewPage = () => {
                             Dari hidangan tradisional hingga masakan modern, semuanya ada di sini.
                         </p>
 
-                        {/* Stats */}
+                        {/* Stats with refresh indicator */}
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-2xl mx-auto mb-8">
                             <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4">
-                                <div className="text-3xl font-bold">{categories.length}</div>
+                                <div className="text-3xl font-bold">{stats.total_categories}</div>
                                 <div className="text-sm opacity-80">Kategori</div>
                             </div>
                             <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4">
-                                <div className="text-3xl font-bold">{totalRecipes}</div>
+                                <div className="text-3xl font-bold">{stats.total_recipes}</div>
                                 <div className="text-sm opacity-80">Total Resep</div>
                             </div>
                             <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4">
-                                <div className="text-3xl font-bold">4.8</div>
+                                <div className="text-3xl font-bold">{stats.average_rating || 4.8}</div>
                                 <div className="text-sm opacity-80">Rating Rata-rata</div>
                             </div>
+                        </div>
+
+                        {/* Stats Update Info */}
+                        <div className="flex items-center justify-center gap-4 mb-8 text-sm text-white/70">
+                            {lastUpdated && (
+                                <span>Last updated: {lastUpdated.toLocaleTimeString()}</span>
+                            )}
+                            <button
+                                onClick={refreshStats}
+                                className="btn btn-ghost btn-xs text-white/80 hover:text-white"
+                                disabled={statsLoading}
+                            >
+                                <FaSync className={`mr-1 ${statsLoading ? 'animate-spin' : ''}`} />
+                                Refresh
+                            </button>
                         </div>
 
                         {/* Search Bar */}

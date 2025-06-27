@@ -28,6 +28,19 @@ class Recipe(db.Model):
     ratings = db.relationship('Rating', backref='recipe', lazy='dynamic', cascade='all, delete-orphan')
     recipe_ingredients = db.relationship('RecipeIngredient', backref='recipe', lazy='dynamic', cascade='all, delete-orphan')
     
+    @property
+    def average_rating(self):
+        """Calculate average rating for this recipe"""
+        ratings = self.ratings.all()
+        if not ratings:
+            return 0.0
+        return sum(rating.rating for rating in ratings) / len(ratings)
+    
+    @property
+    def rating_count(self):
+        """Get number of ratings for this recipe"""
+        return self.ratings.count()
+    
     def to_dict(self, include_details=True):
         data = {
             'id': self.id,
@@ -44,6 +57,8 @@ class Recipe(db.Model):
             'is_featured': self.is_featured,
             'view_count': self.view_count,
             'like_count': self.like_count,
+            'average_rating': self.average_rating,
+            'rating_count': self.rating_count,
             'user_id': self.user_id,
             'category_id': self.category_id,
             'created_at': self.created_at.isoformat() if self.created_at else None,
@@ -52,5 +67,23 @@ class Recipe(db.Model):
         
         if include_details:
             data['instructions'] = self.instructions
+        
+        # Include user data if available
+        if hasattr(self, 'user') and self.user:
+            data['user'] = {
+                'id': self.user.id,
+                'username': self.user.username,
+                'full_name': self.user.full_name,
+                'role': self.user.role
+            }
+        
+        # Include category data if available  
+        if hasattr(self, 'category') and self.category:
+            data['category'] = {
+                'id': self.category.id,
+                'name': self.category.name,
+                'slug': self.category.slug,
+                'icon': self.category.icon
+            }
         
         return data

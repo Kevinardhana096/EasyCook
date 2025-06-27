@@ -1,5 +1,6 @@
 import Navbar from '../common/Navbar';
 import Footer from '../common/Footer';
+import RoleTestingPanel from '../common/RoleTestingPanel';
 
 const Layout = ({ children }) => {
   return (
@@ -9,6 +10,7 @@ const Layout = ({ children }) => {
         {children}
       </main>
       <Footer />
+      <RoleTestingPanel />
     </div>
   );
 };
