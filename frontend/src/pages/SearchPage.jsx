@@ -152,7 +152,7 @@ const SearchPage = () => {
       {/* Hero Search Section */}
       <div className="relative bg-orange-50">
         <div className="absolute inset-0 bg-orange-50"></div>
-        <div className="relative container mx-auto px-6 py-14 font-brand">
+        <div className="relative container mx-auto px-6 py-24 font-brand">
           <div className="max-w-4xl mx-auto text-center">
             {/* Header */}
             <div className="mb-12">
