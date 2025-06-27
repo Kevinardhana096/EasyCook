@@ -368,7 +368,7 @@ const RegisterPage = () => {
                 className="w-full bg-orange-50 hover:bg-orange-100 text-orange-800 font-semibold font-brand py-2 px-6 rounded-xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
               >
                 {isSubmitting ? (
-                  <div className="flex items-center justify-center">
+                  <div className="flex items-center justify-center bg-orange-50">
                     <LoadingSpinner size="sm" text="" />
                     <span className="ml-2">Creating Account ...</span>
                   </div>

@@ -387,7 +387,7 @@ const CategoryPage = () => {
 
             {/* Loading State */}
             {loading && (
-              <div className="flex justify-center py-16">
+              <div className="flex justify-center py-16 bg-orange-50">
                 <LoadingSpinner />
               </div>
             )}

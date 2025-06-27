@@ -55,7 +55,7 @@ const GuestHomePage = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center bg-orange-50">
         <LoadingSpinner size="lg" text="Loading..." />
       </div>
     );
@@ -129,7 +129,7 @@ const GuestHomePage = () => {
               ))}
             </div>
           ) : (
-            <div className="text-center py-12">
+            <div className="text-center py-12 bg-orange-50">
               <p className="text-orange-800 text-lg">
                 Loading amazing recipes...
               </p>

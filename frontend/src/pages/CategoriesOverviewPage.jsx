@@ -141,7 +141,7 @@ const CategoriesOverviewPage = () => {
   // Show loading spinner if loading
   if (loading) {
     return (
-      <div className="min-h-screen bg-base-200 flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center bg-orange-50">
         <LoadingSpinner />
       </div>
     );

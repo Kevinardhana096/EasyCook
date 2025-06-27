@@ -181,12 +181,6 @@ const RecipeCard = ({
                 <span>{likes}</span>
               </div>
             )}
-            {views > 0 && (
-              <div className="flex items-center">
-                <FaEye className="mr-1" />
-                <span>{views}</span>
-              </div>
-            )}
           </div>
         </div>
 
@@ -195,8 +189,7 @@ const RecipeCard = ({
             {/* Status info for drafts */}
             {!is_published && (
               <div className="flex items-center text-xs text-orange-600">
-                <span className="mr-1">📝</span>
-                <span>Draft - Only visible to you</span>
+                <span>Draft</span>
               </div>
             )}
 

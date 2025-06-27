@@ -217,7 +217,7 @@ const LoginPage = () => {
                     type="checkbox"
                     className="w-4 h-4 text-orange-700 bg-gray-100 border-gray-300 rounded focus:ring-orange-700 focus:ring-2 transition-all duration-300"
                   />
-                  <span className="ml-3 text-sm font-brand font-medium text-orange-900 group-hover:text-orange-300 transition-colors duration-300">
+                  <span className="ml-3 text-sm font-brand font-medium text-orange-50 group-hover:text-orange-300 transition-colors duration-300">
                     Remember me
                   </span>
                 </label>

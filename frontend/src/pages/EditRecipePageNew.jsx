@@ -192,7 +192,7 @@ const EditRecipePage = () => {
 
     if (loading) {
         return (
-            <div className="flex items-center justify-center min-h-screen">
+            <div className="flex items-center bg-orange-50 justify-center min-h-screen">
                 <LoadingSpinner size="lg" text="Loading recipe..." />
             </div>
         );
