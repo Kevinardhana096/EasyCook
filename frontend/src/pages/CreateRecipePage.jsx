@@ -1,14 +1,24 @@
-import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useForm, useFieldArray } from 'react-hook-form';
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { useForm, useFieldArray } from "react-hook-form";
 import {
-  FaPlus, FaMinus, FaUpload, FaSave, FaEye, FaTimes,
-  FaClock, FaUsers, FaUtensils, FaImage, FaList, FaEdit
-} from 'react-icons/fa';
-import { useAuth } from '../contexts/AuthContext';
-import { canCreateRecipes } from '../utils/roleUtils';
-import LoadingSpinner from '../components/common/LoadingSpinner';
-import apiClient from '../api/client';
+  FaPlus,
+  FaMinus,
+  FaUpload,
+  FaSave,
+  FaEye,
+  FaTimes,
+  FaClock,
+  FaUsers,
+  FaUtensils,
+  FaImage,
+  FaList,
+  FaEdit,
+} from "react-icons/fa";
+import { useAuth } from "../contexts/AuthContext";
+import { canCreateRecipes } from "../utils/roleUtils";
+import LoadingSpinner from "../components/common/LoadingSpinner";
+import apiClient from "../api/client";
 
 const CreateRecipePage = () => {
   const navigate = useNavigate();
@@ -19,7 +29,7 @@ const CreateRecipePage = () => {
   const [loading, setLoading] = useState(false);
   const [submitSuccess, setSubmitSuccess] = useState(false);
   const [imagePreview, setImagePreview] = useState(null);
-  const [activeTab, setActiveTab] = useState('basic');
+  const [activeTab, setActiveTab] = useState("basic");
 
   // Form setup with react-hook-form - moved to top level before any conditionals
   const {
@@ -29,47 +39,49 @@ const CreateRecipePage = () => {
     watch,
     setValue,
     formState: { errors, isSubmitting },
-    reset
+    reset,
   } = useForm({
     defaultValues: {
-      title: '',
-      description: '',
-      category_id: '',
-      difficulty: 'Medium',
-      prep_time: '',
-      cook_time: '',
+      title: "",
+      description: "",
+      category_id: "",
+      difficulty: "Medium",
+      prep_time: "",
+      cook_time: "",
       servings: 4,
-      image_url: '',
-      instructions: '',
-      tips: '',
-      ingredients: [
-        { name: '', quantity: '', unit: 'gram', notes: '' }
-      ],
+      image_url: "",
+      instructions: "",
+      tips: "",
+      ingredients: [{ name: "", quantity: "", unit: "gram", notes: "" }],
       nutrition: {
-        calories_per_serving: '',
-        protein: '',
-        carbs: '',
-        fat: '',
-        fiber: ''
-      }
-    }
+        calories_per_serving: "",
+        protein: "",
+        carbs: "",
+        fat: "",
+        fiber: "",
+      },
+    },
   });
 
   // Field arrays for dynamic ingredients
-  const { fields: ingredientFields, append: appendIngredient, remove: removeIngredient } = useFieldArray({
+  const {
+    fields: ingredientFields,
+    append: appendIngredient,
+    remove: removeIngredient,
+  } = useFieldArray({
     control,
-    name: 'ingredients'
+    name: "ingredients",
   });
 
   // Watch form values for calculations
-  const watchPrepTime = watch('prep_time');
-  const watchCookTime = watch('cook_time');
+  const watchPrepTime = watch("prep_time");
+  const watchCookTime = watch("cook_time");
 
   // Redirect if not authenticated
   useEffect(() => {
     if (!isAuthenticated) {
-      navigate('/login', {
-        state: { from: { pathname: '/recipes/create' } }
+      navigate("/login", {
+        state: { from: { pathname: "/recipes/create" } },
       });
     }
   }, [isAuthenticated, navigate]);
@@ -83,15 +95,15 @@ const CreateRecipePage = () => {
   useEffect(() => {
     const prepTime = parseInt(watchPrepTime) || 0;
     const cookTime = parseInt(watchCookTime) || 0;
-    setValue('total_time', prepTime + cookTime);
+    setValue("total_time", prepTime + cookTime);
   }, [watchPrepTime, watchCookTime, setValue]);
 
   const loadCategories = async () => {
     try {
-      const response = await apiClient.get('/recipes/categories');
+      const response = await apiClient.get("/recipes/categories");
       setCategories(response.data.categories || []);
     } catch (err) {
-      console.error('Failed to load categories:', err);
+      console.error("Failed to load categories:", err);
     }
   };
 
@@ -104,7 +116,7 @@ const CreateRecipePage = () => {
         const dataUrl = e.target.result;
         setImagePreview(dataUrl);
         // Use the actual uploaded image data URL
-        setValue('image_url', dataUrl);
+        setValue("image_url", dataUrl);
       };
       reader.readAsDataURL(file);
     }
@@ -112,7 +124,7 @@ const CreateRecipePage = () => {
 
   const removeImage = () => {
     setImagePreview(null);
-    setValue('image_url', '');
+    setValue("image_url", "");
   };
 
   const onSubmit = async (data) => {
@@ -126,29 +138,31 @@ const CreateRecipePage = () => {
         instructions: data.instructions,
         prep_time: parseInt(data.prep_time) || 0,
         cook_time: parseInt(data.cook_time) || 0,
-        total_time: (parseInt(data.prep_time) || 0) + (parseInt(data.cook_time) || 0),
+        total_time:
+          (parseInt(data.prep_time) || 0) + (parseInt(data.cook_time) || 0),
         servings: parseInt(data.servings) || 4,
-        difficulty: data.difficulty || 'Medium',
-        image_url: data.image_url || '',
-        tips: data.tips || '',
+        difficulty: data.difficulty || "Medium",
+        image_url: data.image_url || "",
+        tips: data.tips || "",
         category_id: parseInt(data.category_id) || null,
         is_published: true,
         // Include nutrition data if provided
         nutrition: {
-          calories_per_serving: parseFloat(data.nutrition?.calories_per_serving) || null,
+          calories_per_serving:
+            parseFloat(data.nutrition?.calories_per_serving) || null,
           protein: parseFloat(data.nutrition?.protein) || null,
           carbs: parseFloat(data.nutrition?.carbs) || null,
           fat: parseFloat(data.nutrition?.fat) || null,
-          fiber: parseFloat(data.nutrition?.fiber) || null
-        }
+          fiber: parseFloat(data.nutrition?.fiber) || null,
+        },
       };
 
-      console.log('Submitting recipe:', recipeData);
+      console.log("Submitting recipe:", recipeData);
 
       // Make actual API call to create recipe
-      const response = await apiClient.post('/recipes/', recipeData);
+      const response = await apiClient.post("/recipes/", recipeData);
 
-      console.log('Recipe created successfully:', response.data);
+      console.log("Recipe created successfully:", response.data);
       setSubmitSuccess(true);
 
       // Reset form after success
@@ -156,15 +170,14 @@ const CreateRecipePage = () => {
         reset();
         setImagePreview(null);
         setSubmitSuccess(false);
-        navigate('/search');
+        navigate("/search");
       }, 3000);
-
     } catch (err) {
-      console.error('Recipe creation failed:', err);
+      console.error("Recipe creation failed:", err);
       if (err.response?.data?.message) {
         alert(`Failed to create recipe: ${err.response.data.message}`);
       } else {
-        alert('Failed to create recipe. Please try again.');
+        alert("Failed to create recipe. Please try again.");
       }
     } finally {
       setLoading(false);
@@ -173,27 +186,41 @@ const CreateRecipePage = () => {
 
   const saveDraft = async () => {
     const formData = watch();
-    localStorage.setItem('recipe_draft', JSON.stringify({
-      ...formData,
-      saved_at: new Date().toISOString()
-    }));
-    alert('Recipe saved as draft! 💾');
+    localStorage.setItem(
+      "recipe_draft",
+      JSON.stringify({
+        ...formData,
+        saved_at: new Date().toISOString(),
+      })
+    );
+    alert("Recipe saved as draft! 💾");
   };
 
   const loadDraft = () => {
-    const draft = localStorage.getItem('recipe_draft');
+    const draft = localStorage.getItem("recipe_draft");
     if (draft) {
       const draftData = JSON.parse(draft);
       reset(draftData);
       if (draftData.image_url) {
         setImagePreview(draftData.image_url);
       }
-      alert('Draft loaded! 📄');
+      alert("Draft loaded! 📄");
     }
   };
 
-  const difficultyOptions = ['Easy', 'Medium', 'Hard'];
-  const unitOptions = ['gram', 'kg', 'ml', 'liter', 'cup', 'tbsp', 'tsp', 'piece', 'slice', 'clove'];
+  const difficultyOptions = ["Easy", "Medium", "Hard"];
+  const unitOptions = [
+    "gram",
+    "kg",
+    "ml",
+    "liter",
+    "cup",
+    "tbsp",
+    "tsp",
+    "piece",
+    "slice",
+    "clove",
+  ];
 
   if (!isAuthenticated) {
     return <LoadingSpinner size="lg" text="Checking authentication..." />;
@@ -206,12 +233,14 @@ const CreateRecipePage = () => {
         <div className="max-w-md w-full mx-4">
           <div className="bg-white rounded-xl shadow-lg p-8 text-center">
             <div className="text-6xl mb-4">👨‍🍳</div>
-            <h1 className="text-2xl font-bold text-gray-800 mb-2">Chef Access Required</h1>
+            <h1 className="text-2xl font-bold text-gray-800 mb-2">
+              Chef Access Required
+            </h1>
             <p className="text-gray-600 mb-6">
               You need chef or admin privileges to create recipes.
             </p>
             <button
-              onClick={() => navigate('/')}
+              onClick={() => navigate("/")}
               className="btn btn-outline btn-orange"
             >
               Back to Home
@@ -225,40 +254,36 @@ const CreateRecipePage = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-orange-50 via-yellow-50 to-red-50">
       {/* Animated Header */}
-      <div className="bg-white border-b-4 shadow-lg border-gradient-to-r from-orange-400 to-red-400">
-        <div className="container px-4 py-8 mx-auto">
+      <div className="bg-orange-50">
+        <div className="container px-4 py-8 mx-auto font-brand">
           <div className="flex flex-col items-start justify-between gap-4 lg:flex-row lg:items-center">
             <div className="flex-1">
               <div className="flex items-center mb-2">
-                <div className="p-3 mr-4 rounded-full bg-gradient-to-r from-orange-400 to-red-400">
-                  <FaUtensils className="text-xl text-white" />
-                </div>
-                <h1 className="text-3xl font-bold text-transparent lg:text-4xl bg-gradient-to-r from-orange-600 to-red-600 bg-clip-text">
+                <h1 className="text-3xl font-semibold text-transparent bg-orange-800 mt-7 ml-3 bg-clip-text">
                   Create New Recipe
                 </h1>
-                <span className="ml-2 text-3xl animate-bounce">👨‍🍳</span>
               </div>
-              <p className="mb-2 text-lg text-gray-600">Share your culinary masterpiece with the CookEasy community</p>
-              <div className="flex flex-wrap gap-2 text-sm text-gray-500">
-                <span className="px-3 py-1 text-orange-600 bg-orange-100 rounded-full">📝 Easy to use</span>
-                <span className="px-3 py-1 text-yellow-600 bg-yellow-100 rounded-full">🎯 Step by step</span>
-                <span className="px-3 py-1 text-red-600 bg-red-100 rounded-full">❤️ Share with love</span>
-              </div>
+              <p className="mb-2 text-base text-orange-700 ml-3">
+                Share your culinary masterpiece with the CookEasy community
+              </p>
             </div>
 
-            <div className="flex flex-col gap-3 sm:flex-row">
+            <div className="flex flex-col sm:flex-row gap-3">
+              {/* Load Draft Button */}
               <button
                 type="button"
                 onClick={loadDraft}
-                className="text-orange-600 border-orange-300 btn btn-outline hover:bg-orange-50 hover:border-orange-400"
+                className="flex items-center justify-center px-5 py-2.5 rounded-full border border-orange-300 text-orange-700 bg-white hover:bg-orange-50 hover:border-orange-400 shadow-md transition-all duration-200"
               >
                 <FaEdit className="mr-2" />
                 Load Draft
               </button>
+
+              {/* Save Draft Button */}
               <button
                 type="button"
                 onClick={saveDraft}
-                className="text-white border-none btn bg-gradient-to-r from-orange-400 to-red-400 hover:from-orange-500 hover:to-red-500"
+                className="flex items-center justify-center px-5 py-2.5 rounded-full text-white bg-gradient-to-r from-orange-700 to-orange-900 hover:from-orange-900 hover:to-orange-950 shadow-md transition-all duration-200"
               >
                 <FaSave className="mr-2" />
                 Save Draft
@@ -266,20 +291,35 @@ const CreateRecipePage = () => {
             </div>
           </div>
         </div>
-      </div>      <div className="container px-4 py-8 mx-auto">
+      </div>{" "}
+      <div className="container px-4 py-8 mx-auto">
         <div className="max-w-6xl mx-auto">
           {/* Success Message */}
           {submitSuccess && (
             <div className="mb-8 border-green-300 shadow-lg alert bg-gradient-to-r from-green-100 to-emerald-100">
               <div className="flex items-center">
                 <div className="p-2 mr-3 bg-green-500 rounded-full">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="w-6 h-6 text-white"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth="2"
+                      d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                    />
                   </svg>
                 </div>
                 <div>
-                  <span className="font-semibold text-green-800">Recipe created successfully! 🎉</span>
-                  <p className="mt-1 text-sm text-green-700">Redirecting to recipes page...</p>
+                  <span className="font-semibold text-green-800">
+                    Recipe created successfully!
+                  </span>
+                  <p className="mt-1 text-sm text-green-700">
+                    Redirecting to recipes page...
+                  </p>
                 </div>
               </div>
             </div>
@@ -287,54 +327,87 @@ const CreateRecipePage = () => {
 
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
             {/* Enhanced Tab Navigation */}
-            <div className="p-2 bg-white shadow-xl rounded-2xl">
+            <div className="p-2 bg-orange-950 shadow-xl rounded-2xl">
               <div className="flex flex-wrap justify-center gap-2 lg:justify-start">
                 <button
                   type="button"
-                  className={`tab-button ${activeTab === 'basic' ? 'active' : ''}`}
-                  onClick={() => setActiveTab('basic')}
+                  className={`relative px-4 py-2 rounded-lg font-medium transition-all duration-200 ${
+                    activeTab === "basic"
+                      ? "bg-orange-50 text-orange-800"
+                      : "text-orange-50 hover:bg-orange-50 hover:text-orange-800"
+                  }`}
+                  onClick={() => setActiveTab("basic")}
                 >
-                  <FaEdit className="mr-2 text-lg" />
-                  <span className="font-medium">Basic Info</span>
-                  {activeTab === 'basic' && <div className="absolute bottom-0 left-0 right-0 h-1 rounded-full bg-gradient-to-r from-orange-400 to-red-400"></div>}
+                  <FaEdit className="mr-2 text-lg inline-block" />
+                  <span>Basic Info</span>
+                  {activeTab === "basic" && (
+                    <div className="absolute bottom-0 left-0 right-0 h-1 rounded-full bg-gradient-to-r from-orange-400 to-red-400"></div>
+                  )}
                 </button>
                 <button
                   type="button"
-                  className={`tab-button ${activeTab === 'ingredients' ? 'active' : ''}`}
-                  onClick={() => setActiveTab('ingredients')}
+                  onClick={() => setActiveTab("ingredients")}
+                  className={`relative px-4 py-2 rounded-lg font-medium transition-all duration-200 ${
+                    activeTab === "ingredients"
+                      ? "bg-orange-50 text-orange-800"
+                      : "text-orange-50 hover:bg-orange-50 hover:text-orange-800"
+                  }`}
                 >
-                  <FaList className="mr-2 text-lg" />
-                  <span className="font-medium">Ingredients</span>
-                  {activeTab === 'ingredients' && <div className="absolute bottom-0 left-0 right-0 h-1 rounded-full bg-gradient-to-r from-orange-400 to-red-400"></div>}
+                  <span className="flex items-center gap-2">
+                    <FaList className="text-lg" />
+                    <span className="font-medium">Ingredients</span>
+                  </span>
+                  {activeTab === "ingredients" && (
+                    <div className="absolute bottom-0 left-0 right-0 h-1 rounded-full bg-gradient-to-r from-orange-400 to-red-400"></div>
+                  )}
                 </button>
                 <button
                   type="button"
-                  className={`tab-button ${activeTab === 'instructions' ? 'active' : ''}`}
-                  onClick={() => setActiveTab('instructions')}
+                  onClick={() => setActiveTab("instructions")}
+                  className={`relative px-4 py-2 rounded-lg font-medium transition-all duration-200 ${
+                    activeTab === "instructions"
+                      ? "bg-orange-50 text-orange-800"
+                      : "text-orange-50 hover:bg-orange-50 hover:text-orange-800"
+                  }`}
                 >
-                  <FaUtensils className="mr-2 text-lg" />
-                  <span className="font-medium">Instructions</span>
-                  {activeTab === 'instructions' && <div className="absolute bottom-0 left-0 right-0 h-1 rounded-full bg-gradient-to-r from-orange-400 to-red-400"></div>}
+                  <span className="flex items-center gap-2">
+                    <FaUtensils className="text-lg" />
+                    <span className="font-medium">Instructions</span>
+                  </span>
+                  {activeTab === "instructions" && (
+                    <div className="absolute bottom-0 left-0 right-0 h-1 rounded-full bg-gradient-to-r from-orange-400 to-red-400"></div>
+                  )}
                 </button>
                 <button
                   type="button"
-                  className={`tab-button ${activeTab === 'nutrition' ? 'active' : ''}`}
-                  onClick={() => setActiveTab('nutrition')}
+                  onClick={() => setActiveTab("nutrition")}
+                  className={`relative px-4 py-2 rounded-lg font-medium transition-all duration-200 ${
+                    activeTab === "nutrition"
+                      ? "bg-orange-50 text-orange-800"
+                      : "text-orange-50 hover:bg-orange-50 hover:text-orange-800"
+                  }`}
                 >
-                  <FaUsers className="mr-2 text-lg" />
-                  <span className="font-medium">Nutrition</span>
-                  {activeTab === 'nutrition' && <div className="absolute bottom-0 left-0 right-0 h-1 rounded-full bg-gradient-to-r from-orange-400 to-red-400"></div>}
+                  <span className="flex items-center gap-2">
+                    <FaUsers className="text-lg" />
+                    <span className="font-medium">Nutrition</span>
+                  </span>
+
+                  {activeTab === "nutrition" && (
+                    <div className="absolute bottom-0 left-0 right-0 h-1 rounded-full bg-gradient-to-r from-orange-400 to-red-400"></div>
+                  )}
                 </button>
               </div>
-            </div>            {/* Basic Information Tab */}
-            {activeTab === 'basic' && (
-              <div className="form-card animate-fade-in">
+            </div>{" "}
+            {/* Basic Information Tab */}
+            {activeTab === "basic" && (
+              <div className="form-card animate-fade-in font-brand">
                 <div className="form-card-header">
-                  <h2 className="flex items-center text-2xl font-bold">
-                    <span className="mr-3 text-3xl">📝</span>
+                  <h2 className="flex items-center text-2xl font-semibold text-orange-50">
                     Basic Recipe Information
                   </h2>
-                  <p className="mt-2 text-orange-100">Tell us about your amazing recipe!</p>
+                  <p className="mt-2 text-orange-50 text-sm">
+                    Tell us about your amazing recipe!
+                  </p>
                 </div>
                 <div className="p-8">
                   <div className="grid grid-cols-1 gap-8 xl:grid-cols-2">
@@ -343,18 +416,22 @@ const CreateRecipePage = () => {
                       {/* Recipe Title */}
                       <div className="form-control">
                         <label className="label">
-                          <span className="flex items-center text-lg font-semibold text-gray-700">
-                            <span className="mr-2">🍽️</span>
+                          <span className="flex items-center text-lg font-semibold text-orange-800">
                             Recipe Title *
                           </span>
                         </label>
                         <input
                           type="text"
-                          placeholder="e.g., Nasi Goreng Spesial Rumahan"
-                          className={`recipe-input ${errors.title ? 'border-red-400' : ''}`}
-                          {...register('title', {
-                            required: 'Recipe title is required',
-                            minLength: { value: 5, message: 'Title must be at least 5 characters' }
+                          placeholder="Title Here"
+                          className={`recipe-input ${
+                            errors.title ? "border-red-400" : ""
+                          }`}
+                          {...register("title", {
+                            required: "Recipe title is required",
+                            minLength: {
+                              value: 5,
+                              message: "Title must be at least 5 characters",
+                            },
                           })}
                         />
                         {errors.title && (
@@ -368,17 +445,22 @@ const CreateRecipePage = () => {
                       {/* Description */}
                       <div className="form-control">
                         <label className="label">
-                          <span className="flex items-center text-lg font-semibold text-gray-700">
-                            <span className="mr-2">📄</span>
+                          <span className="flex items-center text-lg font-semibold text-orange-800">
                             Description *
                           </span>
                         </label>
                         <textarea
-                          placeholder="Describe your recipe in detail... What makes it special? What inspired you to create it?"
-                          className={`recipe-textarea h-32 ${errors.description ? 'border-red-400' : ''}`}
-                          {...register('description', {
-                            required: 'Description is required',
-                            minLength: { value: 20, message: 'Description must be at least 20 characters' }
+                          placeholder="Describe your recipe in here"
+                          className={`recipe-textarea h-32 ${
+                            errors.description ? "border-red-400" : ""
+                          }`}
+                          {...register("description", {
+                            required: "Description is required",
+                            minLength: {
+                              value: 20,
+                              message:
+                                "Description must be at least 20 characters",
+                            },
                           })}
                         />
                         {errors.description && (
@@ -393,14 +475,17 @@ const CreateRecipePage = () => {
                       <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                         <div className="form-control">
                           <label className="label">
-                            <span className="flex items-center text-lg font-semibold text-gray-700">
-                              <span className="mr-2">🏷️</span>
+                            <span className="flex items-center text-lg font-semibold text-orange-800">
                               Category *
                             </span>
                           </label>
                           <select
-                            className={`recipe-select ${errors.category_id ? 'border-red-400' : ''}`}
-                            {...register('category_id', { required: 'Category is required' })}
+                            className={`recipe-select ${
+                              errors.category_id ? "border-red-400" : ""
+                            }`}
+                            {...register("category_id", {
+                              required: "Category is required",
+                            })}
                           >
                             <option value="">Choose category</option>
                             {categories.map((category) => (
@@ -419,19 +504,22 @@ const CreateRecipePage = () => {
 
                         <div className="form-control">
                           <label className="label">
-                            <span className="flex items-center text-lg font-semibold text-gray-700">
-                              <span className="mr-2">⭐</span>
+                            <span className="flex items-center text-lg font-semibold text-orange-800">
                               Difficulty
                             </span>
                           </label>
                           <select
                             className="recipe-select"
-                            {...register('difficulty')}
+                            {...register("difficulty")}
                           >
                             {difficultyOptions.map((difficulty) => (
                               <option key={difficulty} value={difficulty}>
-                                {difficulty === 'Easy' ? '🟢 Easy' :
-                                  difficulty === 'Medium' ? '🟡 Medium' : '🔴 Hard'} {difficulty}
+                                {difficulty === "Easy"
+                                  ? "🟢 Easy"
+                                  : difficulty === "Medium"
+                                  ? "🟡 Medium"
+                                  : "🔴 Hard"}{" "}
+                                {difficulty}
                               </option>
                             ))}
                           </select>
@@ -442,8 +530,7 @@ const CreateRecipePage = () => {
                       <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
                         <div className="form-control">
                           <label className="label">
-                            <span className="flex items-center font-semibold text-gray-700">
-                              <FaClock className="inline mr-2 text-orange-500" />
+                            <span className="flex items-center font-semibold text-orange-800">
                               Prep Time (min)
                             </span>
                           </label>
@@ -451,14 +538,13 @@ const CreateRecipePage = () => {
                             type="number"
                             placeholder="15"
                             className="recipe-input"
-                            {...register('prep_time', { min: 0 })}
+                            {...register("prep_time", { min: 0 })}
                           />
                         </div>
 
                         <div className="form-control">
                           <label className="label">
-                            <span className="flex items-center font-semibold text-gray-700">
-                              <FaClock className="inline mr-2 text-red-500" />
+                            <span className="flex items-center font-semibold text-orange-800">
                               Cook Time (min)
                             </span>
                           </label>
@@ -466,14 +552,13 @@ const CreateRecipePage = () => {
                             type="number"
                             placeholder="30"
                             className="recipe-input"
-                            {...register('cook_time', { min: 0 })}
+                            {...register("cook_time", { min: 0 })}
                           />
                         </div>
 
                         <div className="form-control">
                           <label className="label">
-                            <span className="flex items-center font-semibold text-gray-700">
-                              <FaUsers className="inline mr-2 text-green-500" />
+                            <span className="flex items-center font-semibold text-orange-800">
                               Servings
                             </span>
                           </label>
@@ -481,7 +566,7 @@ const CreateRecipePage = () => {
                             type="number"
                             placeholder="4"
                             className="recipe-input"
-                            {...register('servings', { min: 1, max: 20 })}
+                            {...register("servings", { min: 1, max: 20 })}
                           />
                         </div>
                       </div>
@@ -490,8 +575,7 @@ const CreateRecipePage = () => {
                     {/* Right Column - Enhanced Image Upload */}
                     <div>
                       <label className="label">
-                        <span className="flex items-center text-lg font-semibold text-gray-700">
-                          <span className="mr-2">📸</span>
+                        <span className="flex items-center text-lg font-semibold text-orange-800">
                           Recipe Image
                         </span>
                       </label>
@@ -516,9 +600,13 @@ const CreateRecipePage = () => {
                       ) : (
                         <div className="image-upload-area">
                           <div className="mb-4">
-                            <FaImage className="mx-auto mb-4 text-6xl text-orange-400" />
-                            <h3 className="mb-2 text-xl font-semibold text-gray-700">Upload Recipe Photo</h3>
-                            <p className="text-gray-500">Show off your delicious creation!</p>
+                            <FaImage className="mx-auto mb-4 text-6xl text-orange-900" />
+                            <h3 className="mb-2 text-xl font-semibold text-orange-800">
+                              Upload Recipe Photo
+                            </h3>
+                            <p className="text-orange-700">
+                              Show off your delicious creation!
+                            </p>
                           </div>
                           <label className="cursor-pointer recipe-btn-primary">
                             <FaUpload className="mr-2" />
@@ -530,9 +618,6 @@ const CreateRecipePage = () => {
                               className="hidden"
                             />
                           </label>
-                          <p className="mt-3 text-sm text-gray-400">
-                            💡 Tip: Good lighting makes your dish look amazing!
-                          </p>
                         </div>
                       )}
 
@@ -541,7 +626,7 @@ const CreateRecipePage = () => {
                           type="url"
                           placeholder="Or paste image URL..."
                           className="text-sm recipe-input"
-                          {...register('image_url')}
+                          {...register("image_url")}
                           onChange={(e) => {
                             if (e.target.value) {
                               setImagePreview(e.target.value);
@@ -553,21 +638,30 @@ const CreateRecipePage = () => {
                   </div>
                 </div>
               </div>
-            )}            {/* Enhanced Ingredients Tab */}
-            {activeTab === 'ingredients' && (
-              <div className="form-card animate-fade-in">
+            )}{" "}
+            {/* Enhanced Ingredients Tab */}
+            {activeTab === "ingredients" && (
+              <div className="form-card animate-fade-in font-brand">
                 <div className="form-card-header">
                   <div className="flex items-center justify-between">
                     <div>
-                      <h2 className="flex items-center text-2xl font-bold">
-                        <span className="mr-3 text-3xl">🥘</span>
+                      <h2 className="flex items-center text-2xl font-semibold text-orange-50">
                         Recipe Ingredients
                       </h2>
-                      <p className="mt-2 text-orange-100">List all the ingredients needed for your recipe</p>
+                      <p className="mt-2 text-orange-50 text-sm">
+                        List all the ingredients needed for your recipe
+                      </p>
                     </div>
                     <button
                       type="button"
-                      onClick={() => appendIngredient({ name: '', quantity: '', unit: 'gram', notes: '' })}
+                      onClick={() =>
+                        appendIngredient({
+                          name: "",
+                          quantity: "",
+                          unit: "gram",
+                          notes: "",
+                        })
+                      }
                       className="flex items-center gap-2 px-4 py-2 text-white transition-all duration-200 rounded-lg bg-white/20 hover:bg-white/30"
                     >
                       <FaPlus />
@@ -579,27 +673,33 @@ const CreateRecipePage = () => {
                 <div className="p-8">
                   {ingredientFields.length > 0 ? (
                     <div className="space-y-4">
-                      {/* Header for ingredient columns */}                      <div className="hidden grid-cols-12 gap-4 px-4 py-2 font-semibold text-gray-700 bg-gray-100 rounded-lg md:grid">
-                        <div className="col-span-4">🥕 Ingredient Name</div>
-                        <div className="col-span-2">📏 Quantity</div>
-                        <div className="col-span-2">📦 Unit</div>
-                        <div className="col-span-3">📝 Notes</div>
-                        <div className="col-span-1">🗑️ Action</div>
+                      {/* Header for ingredient columns */}{" "}
+                      <div className="hidden grid-cols-12 gap-4 px-4 py-2 font-semibold text-orange-50 bg-orange-950 rounded-lg md:grid">
+                        <div className="col-span-4">Ingredient Name</div>
+                        <div className="col-span-2">Quantity</div>
+                        <div className="col-span-2">Unit</div>
+                        <div className="col-span-3">Notes</div>
+                        <div className="col-span-1">Action</div>
                       </div>
-
                       {ingredientFields.map((field, index) => (
                         <div key={field.id} className="ingredient-card group">
                           <div className="grid grid-cols-1 gap-4 md:grid-cols-12">
                             {/* Ingredient Name */}
                             <div className="md:col-span-4">
-                              <label className="block mb-2 font-semibold text-gray-700 md:hidden">
-                                🥕 Ingredient Name
+                              <label className="block mb-2 font-semibold text-gray-600 md:hidden">
+                                Ingredient Name
                               </label>
                               <input
                                 type="text"
                                 placeholder="e.g., Chicken breast, Onion, Garlic..."
-                                className={`recipe-input ${errors.ingredients?.[index]?.name ? 'border-red-400' : ''}`}
-                                {...register(`ingredients.${index}.name`, { required: 'Ingredient name is required' })}
+                                className={`recipe-input ${
+                                  errors.ingredients?.[index]?.name
+                                    ? "border-red-400"
+                                    : ""
+                                }`}
+                                {...register(`ingredients.${index}.name`, {
+                                  required: "Ingredient name is required",
+                                })}
                               />
                               {errors.ingredients?.[index]?.name && (
                                 <p className="flex items-center mt-1 text-xs text-red-500">
@@ -612,24 +712,32 @@ const CreateRecipePage = () => {
                             {/* Quantity */}
                             <div className="md:col-span-2">
                               <label className="block mb-2 font-semibold text-gray-700 md:hidden">
-                                📏 Quantity
+                                Quantity
                               </label>
                               <input
                                 type="number"
                                 placeholder="250"
                                 step="0.1"
-                                className={`recipe-input ${errors.ingredients?.[index]?.quantity ? 'border-red-400' : ''}`}
-                                {...register(`ingredients.${index}.quantity`, { required: 'Quantity is required' })}
+                                className={`recipe-input ${
+                                  errors.ingredients?.[index]?.quantity
+                                    ? "border-red-400"
+                                    : ""
+                                }`}
+                                {...register(`ingredients.${index}.quantity`, {
+                                  required: "Quantity is required",
+                                })}
                               />
                               {errors.ingredients?.[index]?.quantity && (
-                                <p className="mt-1 text-xs text-red-500">Required</p>
+                                <p className="mt-1 text-xs text-red-500">
+                                  Required
+                                </p>
                               )}
                             </div>
 
                             {/* Unit */}
                             <div className="md:col-span-2">
                               <label className="block mb-2 font-semibold text-gray-700 md:hidden">
-                                📦 Unit
+                                Unit
                               </label>
                               <select
                                 className="recipe-select"
@@ -646,7 +754,7 @@ const CreateRecipePage = () => {
                             {/* Notes */}
                             <div className="md:col-span-3">
                               <label className="block mb-2 font-semibold text-gray-700 md:hidden">
-                                📝 Notes (Optional)
+                                Notes (Optional)
                               </label>
                               <input
                                 type="text"
@@ -655,46 +763,50 @@ const CreateRecipePage = () => {
                                 {...register(`ingredients.${index}.notes`)}
                               />
                             </div>
-
-                            {/* Remove Button */}
-                            <div className="flex items-end md:col-span-1">
-                              {ingredientFields.length > 1 && (
-                                <button
-                                  type="button"
-                                  onClick={() => removeIngredient(index)}
-                                  className="w-full p-2 text-white transition-all duration-200 bg-red-500 rounded-lg opacity-0 md:w-auto hover:bg-red-600 group-hover:opacity-100 md:opacity-100"
-                                  title="Remove ingredient"
-                                >
-                                  <FaMinus />
-                                </button>
-                              )}
-                            </div>
                           </div>
                         </div>
                       ))}
-
                       {/* Add Another Ingredient Button */}
                       <div className="flex justify-center pt-4">
                         <button
                           type="button"
-                          onClick={() => appendIngredient({ name: '', quantity: '', unit: 'gram', notes: '' })}
-                          className="recipe-btn-secondary"
+                          onClick={() =>
+                            appendIngredient({
+                              name: "",
+                              quantity: "",
+                              unit: "gram",
+                              notes: "",
+                            })
+                          }
+                          className="inline-flex items-center gap-2 px-6 py-2 rounded-lg text-white bg-gradient-to-r from-orange-800 to-orange-900 hover:from-orange-900 hover:to-orange-950 shadow-md hover:shadow-lg transition-all duration-200"
                         >
-                          <FaPlus className="mr-2" />
-                          Add Another Ingredient
+                          <FaPlus className="text-white" />
+                          <span className="font-semibold">
+                            Add Another Ingredient
+                          </span>
                         </button>
                       </div>
                     </div>
                   ) : (
                     <div className="py-16 text-center">
-                      <div className="mb-6 text-8xl">🥘</div>
-                      <h3 className="mb-4 text-2xl font-bold text-gray-700">No ingredients added yet</h3>
+                      <h3 className="mb-4 text-2xl font-bold text-gray-700">
+                        No ingredients added yet
+                      </h3>
                       <p className="max-w-md mx-auto mb-8 text-gray-500">
-                        Start building your recipe by adding the first ingredient. Don't worry, you can add as many as you need!
+                        Start building your recipe by adding the first
+                        ingredient. Don't worry, you can add as many as you
+                        need!
                       </p>
                       <button
                         type="button"
-                        onClick={() => appendIngredient({ name: '', quantity: '', unit: 'gram', notes: '' })}
+                        onClick={() =>
+                          appendIngredient({
+                            name: "",
+                            quantity: "",
+                            unit: "gram",
+                            notes: "",
+                          })
+                        }
                         className="px-8 py-4 text-lg recipe-btn-primary"
                       >
                         <FaPlus className="mr-2" />
@@ -702,43 +814,19 @@ const CreateRecipePage = () => {
                       </button>
                     </div>
                   )}
-
-                  {/* Tips Section */}
-                  <div className="p-6 mt-8 border border-blue-200 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl">
-                    <h4 className="flex items-center mb-3 font-semibold text-blue-800">
-                      <span className="mr-2 text-xl">💡</span>
-                      Pro Tips for Better Ingredients List
-                    </h4>
-                    <div className="grid gap-4 text-sm text-blue-700 md:grid-cols-2">
-                      <div className="flex items-start">
-                        <span className="mr-2">✅</span>
-                        <span>Be specific with quantities for best results</span>
-                      </div>
-                      <div className="flex items-start">
-                        <span className="mr-2">✅</span>
-                        <span>Add preparation notes (diced, minced, etc.)</span>
-                      </div>
-                      <div className="flex items-start">
-                        <span className="mr-2">✅</span>
-                        <span>List ingredients in order of use</span>
-                      </div>
-                      <div className="flex items-start">
-                        <span className="mr-2">✅</span>
-                        <span>Include alternative ingredients if possible</span>
-                      </div>
-                    </div>
-                  </div>
                 </div>
               </div>
-            )}            {/* Enhanced Instructions Tab */}
-            {activeTab === 'instructions' && (
-              <div className="form-card animate-fade-in">
+            )}{" "}
+            {/* Enhanced Instructions Tab */}
+            {activeTab === "instructions" && (
+              <div className="form-card animate-fade-in font-brand">
                 <div className="form-card-header">
-                  <h2 className="flex items-center text-2xl font-bold">
-                    <span className="mr-3 text-3xl">👩‍🍳</span>
+                  <h2 className="flex items-center text-2xl font-semibold text-orange-50">
                     Cooking Instructions
                   </h2>
-                  <p className="mt-2 text-orange-100">Guide your readers through each step of your recipe</p>
+                  <p className="mt-2 text-orange-50 text-sm">
+                    Guide your readers through each step of your recipe
+                  </p>
                 </div>
 
                 <div className="p-8">
@@ -747,21 +835,26 @@ const CreateRecipePage = () => {
                     <div className="form-control">
                       <label className="label">
                         <span className="flex items-center text-lg font-semibold text-gray-700">
-                          <span className="mr-2">📋</span>
                           Step-by-step instructions *
                         </span>
                       </label>
                       <div className="relative">
                         <textarea
-                          placeholder="1. Heat 2 tablespoons of oil in a large wok or frying pan over medium-high heat&#10;2. Add minced garlic and diced onions, stir-fry for 2-3 minutes until fragrant&#10;3. Add the cooked rice and break up any clumps with your spatula&#10;4. Push rice to one side of the pan, crack eggs into the empty space&#10;5. Scramble the eggs and then mix them into the rice&#10;6. Add soy sauce, salt, and pepper to taste&#10;7. Garnish with chopped green onions and serve hot&#10;&#10;💡 Pro tip: Use day-old rice for best texture!"
-                          className={`recipe-textarea h-80 ${errors.instructions ? 'border-red-400' : ''}`}
-                          {...register('instructions', {
-                            required: 'Instructions are required',
-                            minLength: { value: 50, message: 'Instructions must be at least 50 characters' }
+                          placeholder="Write your cooking instructions here ..."
+                          className={`recipe-textarea h-80 ${
+                            errors.instructions ? "border-red-400" : ""
+                          }`}
+                          {...register("instructions", {
+                            required: "Instructions are required",
+                            minLength: {
+                              value: 50,
+                              message:
+                                "Instructions must be at least 50 characters",
+                            },
                           })}
                         />
                         <div className="absolute px-3 py-1 text-sm text-gray-500 rounded-full bottom-4 right-4 bg-white/90">
-                          📝 {watch('instructions')?.length || 0} characters
+                          {watch("instructions")?.length || 0} characters
                         </div>
                       </div>
                       {errors.instructions && (
@@ -774,8 +867,10 @@ const CreateRecipePage = () => {
                         <p className="flex items-start text-sm text-yellow-800">
                           <span className="mr-2 text-lg">💡</span>
                           <span>
-                            <strong>Writing great instructions:</strong> Number each step, use action words (heat, add, mix),
-                            specify cooking times and temperatures, and include helpful tips throughout.
+                            <strong>Writing great instructions:</strong> Number
+                            each step, use action words (heat, add, mix),
+                            specify cooking times and temperatures, and include
+                            helpful tips throughout.
                           </span>
                         </p>
                       </div>
@@ -784,61 +879,30 @@ const CreateRecipePage = () => {
                     {/* Chef's Tips */}
                     <div className="form-control">
                       <label className="label">
-                        <span className="flex items-center text-lg font-semibold text-gray-700">
-                          <span className="mr-2">✨</span>
+                        <span className="flex items-center text-lg font-semibold text-orange-800">
                           Chef's Tips & Secrets (Optional)
                         </span>
                       </label>
                       <textarea
-                        placeholder="Share your secret tips and tricks to make this recipe even better...&#10;&#10;• For extra flavor, toast the rice in oil before adding liquid&#10;• Fresh ingredients make all the difference&#10;• Don't overcrowd the pan - cook in batches if needed&#10;• Taste and adjust seasoning at the end"
+                        placeholder="Share your secret tips and tricks to make this recipe even better ..."
                         className="h-32 recipe-textarea"
-                        {...register('tips')}
+                        {...register("tips")}
                       />
-                      <div className="p-4 mt-2 border border-green-200 rounded-lg bg-green-50">
-                        <p className="flex items-start text-sm text-green-800">
-                          <span className="mr-2 text-lg">🎯</span>
-                          <span>
-                            Share your insider knowledge! What tricks do you use? What common mistakes should people avoid?
-                            Your tips help other cooks succeed.
-                          </span>
-                        </p>
-                      </div>
-                    </div>
-
-                    {/* Instruction Preview */}
-                    <div className="p-6 border border-indigo-200 bg-gradient-to-r from-indigo-50 to-purple-50 rounded-xl">
-                      <h4 className="flex items-center mb-4 font-semibold text-indigo-800">
-                        <FaEye className="mr-2" />
-                        Preview Your Instructions
-                      </h4>
-                      <div className="p-4 overflow-y-auto bg-white rounded-lg max-h-60">
-                        {watch('instructions') ? (
-                          <div className="prose-sm prose max-w-none">
-                            {watch('instructions').split('\n').map((line, index) => (
-                              <p key={index} className="mb-2 text-gray-700">
-                                {line.trim() && line}
-                              </p>
-                            ))}
-                          </div>
-                        ) : (
-                          <p className="py-8 italic text-center text-gray-400">
-                            Your instructions will appear here as you type...
-                          </p>
-                        )}
-                      </div>
                     </div>
                   </div>
                 </div>
               </div>
-            )}            {/* Enhanced Nutrition Tab */}
-            {activeTab === 'nutrition' && (
-              <div className="form-card animate-fade-in">
+            )}{" "}
+            {/* Enhanced Nutrition Tab */}
+            {activeTab === "nutrition" && (
+              <div className="form-card animate-fade-in font-brand">
                 <div className="form-card-header">
-                  <h2 className="flex items-center text-2xl font-bold">
-                    <span className="mr-3 text-3xl">🥗</span>
+                  <h2 className="flex items-center text-2xl font-semibold text-orange-50">
                     Nutritional Information
                   </h2>
-                  <p className="mt-2 text-orange-100">Help your readers make informed dietary choices (Optional but recommended)</p>
+                  <p className="mt-2 text-orange-50 text-sm">
+                    Help your readers make informed dietary choices
+                  </p>
                 </div>
 
                 <div className="p-8">
@@ -847,8 +911,7 @@ const CreateRecipePage = () => {
                     <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
                       <div className="form-control">
                         <label className="label">
-                          <span className="flex items-center font-semibold text-gray-700">
-                            <span className="mr-2">🔥</span>
+                          <span className="flex items-center font-semibold text-orange-800">
                             Calories per serving
                           </span>
                         </label>
@@ -856,15 +919,18 @@ const CreateRecipePage = () => {
                           type="number"
                           placeholder="350"
                           className="recipe-input"
-                          {...register('nutrition.calories_per_serving', { min: 0 })}
+                          {...register("nutrition.calories_per_serving", {
+                            min: 0,
+                          })}
                         />
-                        <p className="mt-1 text-xs text-gray-500">Average serving calories</p>
+                        <p className="mt-1 text-xs text-gray-500">
+                          Average serving calories
+                        </p>
                       </div>
 
                       <div className="form-control">
                         <label className="label">
-                          <span className="flex items-center font-semibold text-gray-700">
-                            <span className="mr-2">💪</span>
+                          <span className="flex items-center font-semibold text-orange-800">
                             Protein (g)
                           </span>
                         </label>
@@ -873,15 +939,16 @@ const CreateRecipePage = () => {
                           step="0.1"
                           placeholder="25.5"
                           className="recipe-input"
-                          {...register('nutrition.protein', { min: 0 })}
+                          {...register("nutrition.protein", { min: 0 })}
                         />
-                        <p className="mt-1 text-xs text-gray-500">Grams of protein</p>
+                        <p className="mt-1 text-xs text-gray-500">
+                          Grams of protein
+                        </p>
                       </div>
 
                       <div className="form-control">
                         <label className="label">
-                          <span className="flex items-center font-semibold text-gray-700">
-                            <span className="mr-2">🍞</span>
+                          <span className="flex items-center font-semibold text-orange-800">
                             Carbohydrates (g)
                           </span>
                         </label>
@@ -890,15 +957,16 @@ const CreateRecipePage = () => {
                           step="0.1"
                           placeholder="45.0"
                           className="recipe-input"
-                          {...register('nutrition.carbs', { min: 0 })}
+                          {...register("nutrition.carbs", { min: 0 })}
                         />
-                        <p className="mt-1 text-xs text-gray-500">Grams of carbs</p>
+                        <p className="mt-1 text-xs text-gray-500">
+                          Grams of carbs
+                        </p>
                       </div>
 
                       <div className="form-control">
                         <label className="label">
-                          <span className="flex items-center font-semibold text-gray-700">
-                            <span className="mr-2">🥑</span>
+                          <span className="flex items-center font-semibold text-orange-800">
                             Fat (g)
                           </span>
                         </label>
@@ -907,15 +975,16 @@ const CreateRecipePage = () => {
                           step="0.1"
                           placeholder="12.3"
                           className="recipe-input"
-                          {...register('nutrition.fat', { min: 0 })}
+                          {...register("nutrition.fat", { min: 0 })}
                         />
-                        <p className="mt-1 text-xs text-gray-500">Grams of fat</p>
+                        <p className="mt-1 text-xs text-gray-500">
+                          Grams of fat
+                        </p>
                       </div>
 
                       <div className="form-control">
                         <label className="label">
-                          <span className="flex items-center font-semibold text-gray-700">
-                            <span className="mr-2">🌾</span>
+                          <span className="flex items-center font-semibold text-orange-800">
                             Fiber (g)
                           </span>
                         </label>
@@ -924,113 +993,109 @@ const CreateRecipePage = () => {
                           step="0.1"
                           placeholder="5.0"
                           className="recipe-input"
-                          {...register('nutrition.fiber', { min: 0 })}
+                          {...register("nutrition.fiber", { min: 0 })}
                         />
-                        <p className="mt-1 text-xs text-gray-500">Grams of fiber</p>
+                        <p className="mt-1 text-xs text-gray-500">
+                          Grams of fiber
+                        </p>
                       </div>
                     </div>
 
                     {/* Nutrition Preview Card */}
                     <div className="p-6 border border-green-200 bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl">
                       <h4 className="flex items-center mb-4 font-semibold text-green-800">
-                        <span className="mr-2 text-xl">📊</span>
                         Nutrition Facts Preview
                       </h4>
                       <div className="p-4 bg-white rounded-lg">
                         <div className="grid grid-cols-2 gap-4 text-center md:grid-cols-5">
                           <div className="p-3 rounded-lg bg-orange-50">
                             <div className="text-2xl font-bold text-orange-600">
-                              {watch('nutrition.calories_per_serving') || '-'}
+                              {watch("nutrition.calories_per_serving") || "-"}
                             </div>
-                            <div className="text-xs text-gray-600">Calories</div>
+                            <div className="text-xs text-gray-600">
+                              Calories
+                            </div>
                           </div>
                           <div className="p-3 rounded-lg bg-blue-50">
                             <div className="text-2xl font-bold text-blue-600">
-                              {watch('nutrition.protein') || '-'}g
+                              {watch("nutrition.protein") || "-"}g
                             </div>
                             <div className="text-xs text-gray-600">Protein</div>
                           </div>
                           <div className="p-3 rounded-lg bg-yellow-50">
                             <div className="text-2xl font-bold text-yellow-600">
-                              {watch('nutrition.carbs') || '-'}g
+                              {watch("nutrition.carbs") || "-"}g
                             </div>
                             <div className="text-xs text-gray-600">Carbs</div>
                           </div>
                           <div className="p-3 rounded-lg bg-green-50">
                             <div className="text-2xl font-bold text-green-600">
-                              {watch('nutrition.fat') || '-'}g
+                              {watch("nutrition.fat") || "-"}g
                             </div>
                             <div className="text-xs text-gray-600">Fat</div>
                           </div>
                           <div className="p-3 rounded-lg bg-purple-50">
                             <div className="text-2xl font-bold text-purple-600">
-                              {watch('nutrition.fiber') || '-'}g
+                              {watch("nutrition.fiber") || "-"}g
                             </div>
                             <div className="text-xs text-gray-600">Fiber</div>
                           </div>
                         </div>
                       </div>
                     </div>
-
-                    {/* Info Section */}
-                    <div className="p-6 border border-blue-200 bg-blue-50 rounded-xl">
-                      <div className="flex items-start">
-                        <span className="mr-3 text-2xl">ℹ️</span>
-                        <div>
-                          <h4 className="mb-2 font-semibold text-blue-800">About Nutritional Information</h4>
-                          <p className="text-sm leading-relaxed text-blue-700">
-                            While nutritional information is optional, it helps your readers make informed dietary choices.
-                            Values should be calculated per serving based on the ingredients you've listed. You can use online
-                            nutrition calculators or consult nutrition labels for accuracy.
-                          </p>
-                        </div>
-                      </div>
-                    </div>
                   </div>
                 </div>
               </div>
-            )}            {/* Enhanced Action Buttons */}
+            )}{" "}
+            {/* Enhanced Action Buttons */}
             <div className="form-card">
-              <div className="p-8 bg-gradient-to-r from-gray-50 to-gray-100">
+              <div className="p-8 bg-gradient-to-r from-gray-50 to-gray-100 font-brand">
                 <div className="flex flex-col items-center justify-between gap-6 lg:flex-row">
                   {/* Recipe Summary */}
                   <div className="flex-1 text-center lg:text-left">
                     <div className="flex flex-col items-center gap-4 sm:flex-row">
                       <div className="flex items-center gap-3">
-                        <div className="flex items-center justify-center w-12 h-12 rounded-full bg-gradient-to-r from-orange-400 to-red-400">
+                        <div className="flex items-center justify-center w-12 h-12 rounded-full bg-gradient-to-r from-orange-800 to-red-900">
                           <span className="font-bold text-white">
-                            {user?.username?.charAt(0).toUpperCase() || 'U'}
+                            {user?.username?.charAt(0).toUpperCase() || "U"}
                           </span>
                         </div>
                         <div>
                           <p className="font-semibold text-gray-800">
-                            Creating as: <span className="text-orange-600">{user?.username || 'User'}</span>
+                            Creating as:{" "}
+                            <span className="text-orange-800">
+                              {user?.username || "User"}
+                            </span>
                           </p>
                           <p className="text-sm text-gray-500">
-                            {new Date().toLocaleDateString('id-ID', {
-                              year: 'numeric',
-                              month: 'long',
-                              day: 'numeric',
-                              hour: '2-digit',
-                              minute: '2-digit'
+                            {new Date().toLocaleDateString("id-ID", {
+                              year: "numeric",
+                              month: "long",
+                              day: "numeric",
                             })}
                           </p>
                         </div>
                       </div>
                       <div className="flex flex-wrap gap-2">
-                        <span className="px-3 py-1 text-sm font-medium text-orange-600 bg-orange-100 rounded-full">
-                          📝 {activeTab === 'basic' ? 'Basic Info' :
-                            activeTab === 'ingredients' ? 'Ingredients' :
-                              activeTab === 'instructions' ? 'Instructions' : 'Nutrition'}
+                        <span className="px-3 py-1 text-sm text-orange-600 bg-orange-100 rounded-full">
+                          {" "}
+                          {activeTab === "basic"
+                            ? "Basic Info"
+                            : activeTab === "ingredients"
+                            ? "Ingredients"
+                            : activeTab === "instructions"
+                            ? "Instructions"
+                            : "Nutrition"}
                         </span>
-                        {watch('title') && (
-                          <span className="px-3 py-1 text-sm font-medium text-green-600 bg-green-100 rounded-full">
-                            ✅ Title Added
+                        {watch("title") && (
+                          <span className="px-3 py-1 text-sm text-green-600 bg-green-100 rounded-full">
+                            Title Added
                           </span>
                         )}
                         {ingredientFields.length > 0 && (
-                          <span className="px-3 py-1 text-sm font-medium text-blue-600 bg-blue-100 rounded-full">
-                            🥘 {ingredientFields.length} Ingredient{ingredientFields.length !== 1 ? 's' : ''}
+                          <span className="px-3 py-1 text-sm text-blue-600 bg-blue-100 rounded-full">
+                            {ingredientFields.length} Ingredient
+                            {ingredientFields.length !== 1 ? "s" : ""}
                           </span>
                         )}
                       </div>
@@ -1039,29 +1104,28 @@ const CreateRecipePage = () => {
 
                   {/* Action Buttons */}
                   <div className="flex flex-col gap-3 sm:flex-row min-w-fit">
+                    {/* Cancel Button */}
                     <button
                       type="button"
-                      onClick={() => navigate('/search')}
-                      className="recipe-btn-secondary"
+                      onClick={() => navigate("/search")}
+                      className="inline-flex items-center justify-center px-6 py-2 rounded-lg text-red-800 bg-red-100 hover:bg-red-200 border border-red-300 text-sm transition-all duration-200"
                       disabled={isSubmitting}
                     >
-                      <FaTimes className="mr-2" />
                       Cancel
                     </button>
-
+                    {/* Save Draft Button */}
                     <button
                       type="button"
                       onClick={saveDraft}
-                      className="recipe-btn-secondary"
+                      className="inline-flex items-center justify-center px-6 py-2 rounded-lg text-orange-800 bg-orange-50 hover:bg-orange-100 border border-orange-300 text-sm transition-all duration-200"
                       disabled={isSubmitting}
                     >
-                      <FaSave className="mr-2" />
                       Save Draft
                     </button>
-
+                    {/* Publish Button */}
                     <button
                       type="submit"
-                      className="px-8 py-3 text-lg recipe-btn-primary"
+                      className="inline-flex items-center justify-center px-8 py-3 rounded-lg text-white text-lg text-sm bg-orange-800 hover:bg-orange-900 shadow-md hover:shadow-lg transition-all duration-200"
                       disabled={isSubmitting || loading}
                     >
                       {isSubmitting || loading ? (
@@ -1070,10 +1134,7 @@ const CreateRecipePage = () => {
                           <span className="ml-2">Publishing Recipe...</span>
                         </>
                       ) : (
-                        <>
-                          <FaEye className="mr-2" />
-                          Publish Recipe 🚀
-                        </>
+                        <>Publish Recipe</>
                       )}
                     </button>
                   </div>
@@ -1081,39 +1142,68 @@ const CreateRecipePage = () => {
 
                 {/* Progress Indicator */}
                 <div className="pt-6 mt-6 border-t border-gray-200">
-                  <div className="flex items-center justify-between mb-2 text-sm text-gray-600">
+                  <div className="flex items-center justify-between mb-2 text-sm text-orange-800">
                     <span>Recipe Completion</span>
                     <span>
                       {(() => {
                         let completed = 0;
-                        if (watch('title')) completed += 25;
-                        if (watch('description')) completed += 25;
+                        if (watch("title")) completed += 25;
+                        if (watch("description")) completed += 25;
                         if (ingredientFields.length > 0) completed += 25;
-                        if (watch('instructions')) completed += 25;
+                        if (watch("instructions")) completed += 25;
                         return completed;
-                      })()}%
+                      })()}
+                      %
                     </span>
                   </div>
                   <div className="w-full h-3 bg-gray-200 rounded-full">
                     <div
-                      className="h-3 transition-all duration-500 rounded-full bg-gradient-to-r from-orange-400 to-red-400"
+                      className="h-3 transition-all duration-500 rounded-full bg-gradient-to-r from-orange-700 to-orange-900"
                       style={{
                         width: `${(() => {
                           let completed = 0;
-                          if (watch('title')) completed += 25;
-                          if (watch('description')) completed += 25;
+                          if (watch("title")) completed += 25;
+                          if (watch("description")) completed += 25;
                           if (ingredientFields.length > 0) completed += 25;
-                          if (watch('instructions')) completed += 25;
+                          if (watch("instructions")) completed += 25;
                           return completed;
-                        })()}%`
+                        })()}%`,
                       }}
                     ></div>
                   </div>
-                  <div className="flex justify-between mt-2 text-xs text-gray-500">
-                    <span className={watch('title') ? 'text-green-600 font-medium' : ''}>Title</span>
-                    <span className={watch('description') ? 'text-green-600 font-medium' : ''}>Description</span>
-                    <span className={ingredientFields.length > 0 ? 'text-green-600 font-medium' : ''}>Ingredients</span>
-                    <span className={watch('instructions') ? 'text-green-600 font-medium' : ''}>Instructions</span>
+                  <div className="flex justify-between mt-2 text-xs text-orange-800">
+                    <span
+                      className={
+                        watch("title") ? "text-green-600 font-medium" : ""
+                      }
+                    >
+                      Title
+                    </span>
+                    <span
+                      className={
+                        watch("description") ? "text-green-600 font-medium" : ""
+                      }
+                    >
+                      Description
+                    </span>
+                    <span
+                      className={
+                        watch("ingridients")
+                          ? "text-green-600 font-medium"
+                          : ""
+                      }
+                    >
+                      Ingredients
+                    </span>
+                    <span
+                      className={
+                        watch("instructions")
+                          ? "text-green-600 font-medium"
+                          : ""
+                      }
+                    >
+                      Instructions
+                    </span>
                   </div>
                 </div>
               </div>

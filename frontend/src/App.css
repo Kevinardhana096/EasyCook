@@ -67,7 +67,7 @@
 }
 
 .form-card-header {
-  background: linear-gradient(135deg, #f97316, #ef4444);
+  background: #431407;
   color: white;
   padding: 1.5rem;
 }
@@ -123,6 +123,7 @@
   transition: all 0.2s ease;
   font-size: 1rem;
   background: white;
+  color: gray;
 }
 
 .recipe-select:focus {
@@ -183,7 +184,7 @@
 }
 
 .ingredient-card {
-  background: linear-gradient(135deg, #fff7ed, #fefce8);
+  background: #fff7ed;
   border-radius: 0.75rem;
   padding: 1rem;
   border: 1px solid #fed7aa;
