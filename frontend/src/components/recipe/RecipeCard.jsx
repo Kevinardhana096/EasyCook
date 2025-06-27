@@ -1,13 +1,27 @@
-import { Link } from 'react-router-dom';
-import { FaClock, FaHeart, FaUser, FaEye, FaToggleOn, FaToggleOff, FaEdit } from 'react-icons/fa';
-import { useState } from 'react';
-import FavoriteButton from './FavoriteButton';
-import PlaceholderImage from '../common/PlaceholderImage';
-import RatingStars from '../common/RatingStars';
-import { useAuth } from '../../contexts/AuthContext';
-import apiClient from '../../api/client';
+import { Link } from "react-router-dom";
+import {
+  FaClock,
+  FaHeart,
+  FaUser,
+  FaEye,
+  FaToggleOn,
+  FaToggleOff,
+  FaEdit,
+} from "react-icons/fa";
+import { useState } from "react";
+import FavoriteButton from "./FavoriteButton";
+import PlaceholderImage from "../common/PlaceholderImage";
+import RatingStars from "../common/RatingStars";
+import { useAuth } from "../../contexts/AuthContext";
+import apiClient from "../../api/client";
 
-const RecipeCard = ({ recipe, showAuthor = true, className = "", showOwnerActions = false, onStatusChange }) => {
+const RecipeCard = ({
+  recipe,
+  showAuthor = true,
+  className = "",
+  showOwnerActions = false,
+  onStatusChange,
+}) => {
   const [imageError, setImageError] = useState(false);
   const [isToggling, setIsToggling] = useState(false);
   const { user } = useAuth();
@@ -26,7 +40,7 @@ const RecipeCard = ({ recipe, showAuthor = true, className = "", showOwnerAction
     views = 0,
     isFavorited = false,
     is_published = true, // Default to true for backward compatibility
-    user_id
+    user_id,
   } = recipe;
 
   const imageSource = image || image_url;
@@ -34,14 +48,14 @@ const RecipeCard = ({ recipe, showAuthor = true, className = "", showOwnerAction
 
   const getDifficultyColor = (difficulty) => {
     switch (difficulty.toLowerCase()) {
-      case 'easy':
-        return 'badge-success';
-      case 'medium':
-        return 'badge-warning';
-      case 'hard':
-        return 'badge-error';
+      case "easy":
+        return "badge-success";
+      case "medium":
+        return "badge-warning";
+      case "hard":
+        return "badge-error";
       default:
-        return 'badge-secondary';
+        return "badge-secondary";
     }
   };
 
@@ -62,19 +76,20 @@ const RecipeCard = ({ recipe, showAuthor = true, className = "", showOwnerAction
       }
 
       // Show success message
-      const status = response.data.is_published ? 'published' : 'unpublished';
+      const status = response.data.is_published ? "published" : "unpublished";
       console.log(`Recipe ${status} successfully`);
-
     } catch (err) {
-      console.error('Failed to toggle recipe status:', err);
-      alert('Failed to update recipe status. Please try again.');
+      console.error("Failed to toggle recipe status:", err);
+      alert("Failed to update recipe status. Please try again.");
     } finally {
       setIsToggling(false);
     }
   };
 
   return (
-    <div className={`card bg-base-100 shadow-xl card-hover ${className}`}>
+    <div
+      className={`card bg-orange-100 shadow-xl card-hover rounded-2xl overflow-hidden ${className}`}
+    >
       <figure className="relative">
         {!imageError && imageSource ? (
           <img
@@ -99,7 +114,11 @@ const RecipeCard = ({ recipe, showAuthor = true, className = "", showOwnerAction
             initialFavorited={isFavorited}
             size="md"
             onToggle={(recipeId, newFavoritedState) => {
-              console.log('Toggle favorite for recipe:', recipeId, newFavoritedState);
+              console.log(
+                "Toggle favorite for recipe:",
+                recipeId,
+                newFavoritedState
+              );
               // TODO: Update parent state or call API
             }}
           />
@@ -114,7 +133,11 @@ const RecipeCard = ({ recipe, showAuthor = true, className = "", showOwnerAction
         )}
 
         {/* Difficulty badge */}
-        <div className={`absolute top-4 left-4 badge ${getDifficultyColor(difficulty)}`}>
+        <div
+          className={`absolute top-4 left-4 badge ${getDifficultyColor(
+            difficulty
+          )}`}
+        >
           {difficulty}
         </div>
 
@@ -126,15 +149,14 @@ const RecipeCard = ({ recipe, showAuthor = true, className = "", showOwnerAction
         )}
       </figure>
 
-      <div className="card-body">
-        <h3 className="card-title text-lg line-clamp-2">
+      <div className="card-body bg-orange-50 font-brand rounded-l-xl">
+        <h3 className="card-title text-orange-800 text-lg line-clamp-2">
           {title}
         </h3>
-
-        <p className="text-gray-600 line-clamp-2 text-sm">{description}</p>
+        <p className="text-gray-700 line-clamp-2 text-sm">{description}</p>
 
         {/* Rating and author */}
-        <div className="flex items-center justify-between mt-4">
+        <div className="flex items-center justify-between">
           <div className="flex items-center space-x-4">
             <RatingStars
               rating={rating}
@@ -192,15 +214,21 @@ const RecipeCard = ({ recipe, showAuthor = true, className = "", showOwnerAction
                 <button
                   onClick={handleTogglePublish}
                   disabled={isToggling}
-                  className={`btn btn-xs ${is_published ? 'btn-warning' : 'btn-success'}`}
-                  title={is_published ? 'Unpublish recipe' : 'Publish recipe'}
+                  className={`btn btn-xs ${
+                    is_published ? "btn-warning" : "btn-success"
+                  }`}
+                  title={is_published ? "Unpublish recipe" : "Publish recipe"}
                 >
                   {isToggling ? (
                     <span className="loading loading-spinner loading-xs"></span>
                   ) : (
                     <>
-                      {is_published ? <FaToggleOff className="mr-1" /> : <FaToggleOn className="mr-1" />}
-                      {is_published ? 'Unpublish' : 'Publish'}
+                      {is_published ? (
+                        <FaToggleOff className="mr-1" />
+                      ) : (
+                        <FaToggleOn className="mr-1" />
+                      )}
+                      {is_published ? "Unpublish" : "Publish"}
                     </>
                   )}
                 </button>
@@ -208,8 +236,11 @@ const RecipeCard = ({ recipe, showAuthor = true, className = "", showOwnerAction
             )}
           </div>
 
-          <Link to={`/recipes/${id}`} className="btn btn-primary btn-sm">
-            {is_published ? 'View Recipe' : 'Edit Draft'}
+          <Link
+            to={`/recipes/${id}`}
+            className="btn btn-sm bg-orange-800 text-orange-50 hover:bg-orange-900 border-none rounded-md"
+          >
+            {is_published ? "View Recipe" : "Edit Draft"}
           </Link>
         </div>
       </div>

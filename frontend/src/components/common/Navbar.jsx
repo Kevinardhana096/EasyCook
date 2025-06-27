@@ -87,7 +87,7 @@ const Navbar = () => {
                   className="text-orange-700 hover:text-orange-900 hover:underline font-normal transition-colors duration-200 flex items-center px-3 py-2 rounded-lg hover:bg-orange-50"
                 >
                   <span className="mr-2"></span>
-                  My Favorites
+                  Favorite
                 </Link>
               </>
             )}
@@ -139,13 +139,6 @@ const Navbar = () => {
                       >
                         <FaHeart className="text-orange-800 mr-2" />
                         Favorites
-                      </Link>
-                      <Link
-                        to="/settings"
-                        className="text-orange-700 hover:text-orange-900 hover:underline font-normal transition-colors duration-200 flex items-center px-3 py-2 rounded-lg hover:bg-orange-50"
-                      >
-                        <FaCog className="text-orange-800 mr-2" />
-                        Settings
                       </Link>
                       {canAccessAdmin(user) && (
                         <>

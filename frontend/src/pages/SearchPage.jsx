@@ -156,11 +156,11 @@ const SearchPage = () => {
           <div className="max-w-4xl mx-auto text-center">
             {/* Header */}
             <div className="mb-12">
-              <h1 className="text-5xl font-bold bg-orange-700 bg-clip-text text-transparent leading-tight mb-3">
+              <h1 className="text-5xl font-bold bg-orange-800 bg-clip-text text-transparent leading-tight mb-3">
                 Cook Something Amazing Today
               </h1>
 
-              <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+              <p className="text-lg text-orange-700 max-w-2xl mx-auto">
                 Enjoy easy-to-make dishes shared by real cooks.
               </p>
             </div>
@@ -218,7 +218,7 @@ const SearchPage = () => {
                   className={`px-4 py-2 rounded-xl font-medium transition-all duration-200 flex items-center gap-2 ${
                     showFilters
                       ? "bg-orange-100 text-orange-700 shadow-md"
-                      : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                      : "bg-gray-200 text-gray-700 hover:bg-gray-300"
                   }`}
                 >
                   <FaFilter className="h-4 w-4" />
