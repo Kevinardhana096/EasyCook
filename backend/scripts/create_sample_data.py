@@ -14,11 +14,11 @@ def create_sample_data():
         # Create tables if they don't exist
         db.create_all()
         
-        # Create categories
+        # Create categories (konsisten bahasa Indonesia)
         categories_data = [
             {
                 'name': 'Hidangan Utama',
-                'slug': 'main-course',
+                'slug': 'hidangan-utama',
                 'description': 'Makanan pokok untuk makan siang dan malam',
                 'icon': '🍽️',
                 'color': '#f97316',
@@ -26,15 +26,15 @@ def create_sample_data():
             },
             {
                 'name': 'Pembuka',
-                'slug': 'appetizer', 
+                'slug': 'pembuka', 
                 'description': 'Makanan ringan untuk membuka selera',
                 'icon': '🥗',
-                'color': '#22c55e',
+                'color': '#eab308',
                 'is_active': True
             },
             {
                 'name': 'Penutup',
-                'slug': 'dessert',
+                'slug': 'penutup',
                 'description': 'Makanan manis untuk menutup hidangan',
                 'icon': '🍰',
                 'color': '#ec4899',
@@ -42,7 +42,7 @@ def create_sample_data():
             },
             {
                 'name': 'Minuman',
-                'slug': 'beverage',
+                'slug': 'minuman',
                 'description': 'Minuman segar dan hangat',
                 'icon': '🥤',
                 'color': '#3b82f6',
@@ -50,18 +50,18 @@ def create_sample_data():
             },
             {
                 'name': 'Camilan',
-                'slug': 'snack',
+                'slug': 'camilan',
                 'description': 'Makanan ringan untuk menemani waktu santai',
                 'icon': '🍿',
-                'color': '#a855f7',
+                'color': '#22c55e',
                 'is_active': True
             },
             {
-                'name': 'Makanan Tradisional',
-                'slug': 'traditional',
-                'description': 'Resep warisan nenek moyang yang autentik',
+                'name': 'Tradisional',
+                'slug': 'tradisional',
+                'description': 'Resep masakan tradisional Nusantara',
                 'icon': '🍲',
-                'color': '#dc2626',
+                'color': '#a855f7',
                 'is_active': True
             }
         ]
@@ -109,9 +109,9 @@ def create_sample_data():
         db.session.commit()
         
         # Create sample recipes
-        main_course_cat = Category.query.filter_by(slug='main-course').first()
-        dessert_cat = Category.query.filter_by(slug='dessert').first()
-        appetizer_cat = Category.query.filter_by(slug='appetizer').first()
+        hidangan_utama_cat = Category.query.filter_by(slug='hidangan-utama').first()
+        penutup_cat = Category.query.filter_by(slug='penutup').first()
+        pembuka_cat = Category.query.filter_by(slug='pembuka').first()
         
         recipes_data = [
             {
@@ -128,7 +128,7 @@ def create_sample_data():
                 'is_published': True,
                 'is_featured': True,
                 'user_id': sample_user.id,
-                'category_id': main_course_cat.id if main_course_cat else 1,
+                'category_id': hidangan_utama_cat.id if hidangan_utama_cat else 1,
                 'view_count': 245
             },
             {
@@ -145,7 +145,7 @@ def create_sample_data():
                 'is_published': True,
                 'is_featured': True,
                 'user_id': sample_user.id,
-                'category_id': main_course_cat.id if main_course_cat else 1,
+                'category_id': hidangan_utama_cat.id if hidangan_utama_cat else 1,
                 'view_count': 389
             },
             {
@@ -162,7 +162,7 @@ def create_sample_data():
                 'is_published': True,
                 'is_featured': True,
                 'user_id': sample_user.id,
-                'category_id': appetizer_cat.id if appetizer_cat else 2,
+                'category_id': pembuka_cat.id if pembuka_cat else 2,
                 'view_count': 156
             },
             {
@@ -179,7 +179,7 @@ def create_sample_data():
                 'is_published': True,
                 'is_featured': False,
                 'user_id': sample_user.id,
-                'category_id': dessert_cat.id if dessert_cat else 3,
+                'category_id': penutup_cat.id if penutup_cat else 3,
                 'view_count': 120
             },
             {
@@ -196,7 +196,7 @@ def create_sample_data():
                 'is_published': True,
                 'is_featured': True,
                 'user_id': sample_user.id,
-                'category_id': main_course_cat.id if main_course_cat else 1,
+                'category_id': hidangan_utama_cat.id if hidangan_utama_cat else 1,
                 'view_count': 298
             },
             {
@@ -213,7 +213,7 @@ def create_sample_data():
                 'is_published': True,
                 'is_featured': True,
                 'user_id': sample_user.id,
-                'category_id': main_course_cat.id if main_course_cat else 1,
+                'category_id': hidangan_utama_cat.id if hidangan_utama_cat else 1,
                 'view_count': 425
             }
         ]

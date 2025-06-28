@@ -7,7 +7,6 @@ import {
   FaHeart,
   FaBookmark,
   FaShare,
-  FaEye,
   FaThumbsUp,
   FaUser,
   FaCalendar,
@@ -395,8 +394,8 @@ const RecipeDetailPage = () => {
                     key={index}
                     to={suggestion.link}
                     className={`btn w-full ${suggestion.primary
-                        ? "btn-primary bg-orange-600 hover:bg-orange-700 text-white border-0"
-                        : "btn-outline btn-primary text-orange-600 border-orange-600 hover:bg-orange-600 hover:text-white"
+                      ? "btn-primary bg-orange-600 hover:bg-orange-700 text-white border-0"
+                      : "btn-outline btn-primary text-orange-600 border-orange-600 hover:bg-orange-600 hover:text-white"
                       }`}
                   >
                     {suggestion.text}
@@ -409,8 +408,8 @@ const RecipeDetailPage = () => {
                     onClick={suggestion.action}
                     disabled={loading}
                     className={`btn w-full ${suggestion.primary
-                        ? "btn-primary bg-orange-600 hover:bg-orange-700 text-white border-0"
-                        : "btn-outline btn-primary text-orange-600 border-orange-600 hover:bg-orange-600 hover:text-white"
+                      ? "btn-primary bg-orange-600 hover:bg-orange-700 text-white border-0"
+                      : "btn-outline btn-primary text-orange-600 border-orange-600 hover:bg-orange-600 hover:text-white"
                       } ${loading ? "loading" : ""}`}
                   >
                     {loading ? "Loading..." : suggestion.text}
@@ -477,8 +476,8 @@ const RecipeDetailPage = () => {
                 onClick={handleToggleFeatured}
                 disabled={actionLoading}
                 className={`btn btn-circle shadow-md hover:shadow-lg border-0 ${recipe?.is_featured
-                    ? "bg-yellow-200 text-yellow-800 hover:bg-yellow-300"
-                    : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                  ? "bg-yellow-200 text-yellow-800 hover:bg-yellow-300"
+                  : "bg-gray-100 text-gray-700 hover:bg-gray-200"
                   }`}
                 title={
                   recipe?.is_featured
@@ -543,8 +542,8 @@ const RecipeDetailPage = () => {
                         onClick={() => handleRating(star)}
                         disabled={actionLoading}
                         className={`text-2xl transition-all duration-200 hover:scale-110 ${star <= getUserRating(parseInt(id)).rating
-                            ? "text-yellow-400 drop-shadow-sm"
-                            : "text-gray-300 hover:text-yellow-300"
+                          ? "text-yellow-400 drop-shadow-sm"
+                          : "text-gray-300 hover:text-yellow-300"
                           } ${actionLoading
                             ? "opacity-50 cursor-not-allowed"
                             : "cursor-pointer"
@@ -630,10 +629,10 @@ const RecipeDetailPage = () => {
               <div className="flex flex-wrap items-center gap-3 font-brand">
                 <span
                   className={`px-4 py-2 rounded-full text-sm font-medium ${recipe.difficulty === "Easy"
-                      ? "bg-green-100 text-green-700"
-                      : recipe.difficulty === "Medium"
-                        ? "bg-yellow-100 text-yellow-700"
-                        : "bg-red-100 text-red-700"
+                    ? "bg-green-100 text-green-700"
+                    : recipe.difficulty === "Medium"
+                      ? "bg-yellow-100 text-yellow-700"
+                      : "bg-red-100 text-red-700"
                     }`}
                 >
                   {recipe.difficulty || "Medium"}
@@ -733,25 +732,6 @@ const RecipeDetailPage = () => {
                     </div>
                   </div>
                 </div>
-
-                {/* Views */}
-                <div className="flex items-center gap-4 h-16 ml-5">
-                  <div className="w-12 h-12 flex items-center justify-center bg-green-100 rounded-full flex-shrink-0">
-                    <FaEye className="text-green-600 text-xl" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">
-                      Views
-                    </p>
-                    <p className="text-base font-semibold text-gray-800 truncate">
-                      {recipe.view_count
-                        ? recipe.view_count >= 1000
-                          ? `${(recipe.view_count / 1000).toFixed(1)}k`
-                          : recipe.view_count
-                        : "0"}
-                    </p>
-                  </div>
-                </div>
               </div>
 
               {/* Additional Recipe Meta */}
@@ -831,8 +811,8 @@ const RecipeDetailPage = () => {
         <div className="justify-center mb-6 space-x-2 bg-orange-900 tabs tabs-boxed">
           <button
             className={`tab rounded-xl font-brand font-medium ${activeTab === "instructions"
-                ? "bg-orange-50 text-orange-800"
-                : "text-orange-50 hover:bg-orange-50 hover:text-orange-800"
+              ? "bg-orange-50 text-orange-800"
+              : "text-orange-50 hover:bg-orange-50 hover:text-orange-800"
               }`}
             onClick={() => setActiveTab("instructions")}
           >
@@ -840,8 +820,8 @@ const RecipeDetailPage = () => {
           </button>
           <button
             className={`tab rounded-none font-brand font-medium ${activeTab === "ingredients"
-                ? "bg-orange-50 text-orange-800"
-                : "text-orange-50 hover:bg-orange-50 hover:text-orange-800"
+              ? "bg-orange-50 text-orange-800"
+              : "text-orange-50 hover:bg-orange-50 hover:text-orange-800"
               }`}
             onClick={() => setActiveTab("ingredients")}
           >
@@ -849,8 +829,8 @@ const RecipeDetailPage = () => {
           </button>
           <button
             className={`tab rounded-none font-brand font-medium ${activeTab === "nutrition"
-                ? "bg-orange-50 text-orange-800"
-                : "text-orange-50 hover:bg-orange-50 hover:text-orange-800"
+              ? "bg-orange-50 text-orange-800"
+              : "text-orange-50 hover:bg-orange-50 hover:text-orange-800"
               }`}
             onClick={() => setActiveTab("nutrition")}
           >

@@ -4,7 +4,7 @@ from app import db
 from app.models import User, Recipe, Category, Rating
 from app.utils.decorators import admin_required, role_required
 from datetime import datetime, timedelta
-from sqlalchemy import func
+from sqlalchemy import func, or_
 
 admin_bp = Blueprint('admin', __name__)
 
@@ -71,7 +71,7 @@ def get_all_users():
         # Apply search filter
         if search:
             query = query.filter(
-                db.or_(
+                or_(
                     User.username.ilike(f'%{search}%'),
                     User.email.ilike(f'%{search}%'),
                     User.full_name.ilike(f'%{search}%')
@@ -170,21 +170,30 @@ def get_all_recipes():
     """Get all recipes for admin management"""
     try:
         page = request.args.get('page', 1, type=int)
-        per_page = request.args.get('per_page', 20, type=int)
+        per_page = request.args.get('per_page', 50, type=int)  # Increased for admin dashboard
         search = request.args.get('search', '', type=str)
         status_filter = request.args.get('status', '', type=str)
         
-        query = Recipe.query
+        # Join with User table to get author information
+        query = Recipe.query.join(User, Recipe.user_id == User.id)
         
         # Apply search filter
         if search:
-            query = query.filter(Recipe.title.ilike(f'%{search}%'))
+            query = query.filter(
+                or_(
+                    Recipe.title.ilike(f'%{search}%'),
+                    Recipe.description.ilike(f'%{search}%'),
+                    User.username.ilike(f'%{search}%')
+                )
+            )
         
         # Apply status filter
         if status_filter == 'published':
             query = query.filter(Recipe.is_published == True)
         elif status_filter == 'draft':
             query = query.filter(Recipe.is_published == False)
+        elif status_filter == 'featured':
+            query = query.filter(Recipe.is_featured == True)
         
         # Paginate results
         recipes = query.order_by(Recipe.created_at.desc()).paginate(
@@ -193,9 +202,44 @@ def get_all_recipes():
             error_out=False
         )
         
+        # Create recipe data with author information
+        recipes_data = []
+        for recipe in recipes.items:
+            try:
+                recipe_dict = recipe.to_dict(include_details=True)
+                # Ensure author information is included - check if user exists
+                if hasattr(recipe, 'user') and recipe.user:
+                    recipe_dict['author'] = {
+                        'id': recipe.user.id,
+                        'username': recipe.user.username,
+                        'full_name': recipe.user.full_name,
+                        'role': recipe.user.role
+                    }
+                else:
+                    # Fallback if user is not loaded
+                    user = User.query.get(recipe.user_id)
+                    if user:
+                        recipe_dict['author'] = {
+                            'id': user.id,
+                            'username': user.username,
+                            'full_name': user.full_name,
+                            'role': user.role
+                        }
+                    else:
+                        recipe_dict['author'] = {
+                            'id': None,
+                            'username': 'Unknown',
+                            'full_name': 'Unknown Author',
+                            'role': 'user'
+                        }
+                recipes_data.append(recipe_dict)
+            except Exception as e:
+                print(f"Error processing recipe {recipe.id}: {str(e)}")
+                continue
+        
         return jsonify({
             'message': 'Recipes retrieved successfully',
-            'recipes': [recipe.to_dict(include_details=True) for recipe in recipes.items],
+            'recipes': recipes_data,
             'pagination': {
                 'page': page,
                 'per_page': per_page,

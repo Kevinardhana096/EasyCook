@@ -72,7 +72,25 @@ def get_categories():
         categories_with_count = []
         for category in categories:
             category_dict = category.to_dict()
-            category_dict['recipe_count'] = Recipe.query.filter_by(category_id=category.id, is_published=True).count()
+            # Count recipes from both many-to-many relationship and old single category
+            many_to_many_count = db.session.query(Recipe).filter(
+                Recipe.categories.any(Category.id == category.id),
+                Recipe.is_published == True
+            ).count()
+            single_category_count = Recipe.query.filter_by(
+                category_id=category.id, 
+                is_published=True
+            ).count()
+            # Use distinct count to avoid double counting
+            total_count = db.session.query(Recipe).filter(
+                db.or_(
+                    Recipe.categories.any(Category.id == category.id),
+                    Recipe.category_id == category.id
+                ),
+                Recipe.is_published == True
+            ).distinct().count()
+            
+            category_dict['recipe_count'] = total_count
             categories_with_count.append(category_dict)
         
         return jsonify({
@@ -98,12 +116,20 @@ def get_recipes():
         from sqlalchemy.orm import joinedload
         recipes_query = Recipe.query.options(
             joinedload(Recipe.user),
-            joinedload(Recipe.category)
+            joinedload(Recipe.category),
+            joinedload(Recipe.categories)  # Load many-to-many categories
         ).filter_by(is_published=True)
         
         # Apply filters
         if category_id:
-            recipes_query = recipes_query.filter_by(category_id=int(category_id))
+            # Filter by many-to-many relationship OR old single category for backward compatibility
+            from app.models.recipe_category import recipe_categories
+            recipes_query = recipes_query.filter(
+                db.or_(
+                    Recipe.categories.any(Category.id == int(category_id)),
+                    Recipe.category_id == int(category_id)
+                )
+            )
         
         if difficulty:
             recipes_query = recipes_query.filter_by(difficulty=difficulty)
@@ -215,10 +241,26 @@ def create_recipe():
             is_published=data.get('is_published', False),
             is_featured=data.get('is_featured', False),
             user_id=user_id,
-            category_id=data.get('category_id')
+            category_id=data.get('category_id')  # Keep for backward compatibility
         )
         
         db.session.add(recipe)
+        db.session.flush()  # Get the recipe ID before adding categories
+        
+        # Handle multiple categories
+        category_ids = data.get('category_ids', [])
+        if category_ids:
+            # Add multiple categories
+            for category_id in category_ids:
+                category = Category.query.get(category_id)
+                if category:
+                    recipe.categories.append(category)
+        elif data.get('category_id'):
+            # Fallback: add single category for backward compatibility
+            category = Category.query.get(data.get('category_id'))
+            if category:
+                recipe.categories.append(category)
+        
         db.session.commit()
         
         return jsonify({
@@ -253,6 +295,23 @@ def update_recipe(recipe_id):
         for field in updateable_fields:
             if field in data:
                 setattr(recipe, field, data[field])
+        
+        # Handle multiple categories update
+        if 'category_ids' in data:
+            # Clear existing categories and add new ones
+            recipe.categories.clear()
+            category_ids = data['category_ids']
+            for category_id in category_ids:
+                category = Category.query.get(category_id)
+                if category:
+                    recipe.categories.append(category)
+        elif 'category_id' in data:
+            # Fallback: handle single category update for backward compatibility
+            recipe.categories.clear()
+            if data['category_id']:
+                category = Category.query.get(data['category_id'])
+                if category:
+                    recipe.categories.append(category)
         
         # Update slug if title changed
         if 'title' in data:

@@ -1,5 +1,6 @@
 from app import db
 from datetime import datetime
+from .recipe_category import recipe_categories
 
 class Recipe(db.Model):
     __tablename__ = 'recipes'
@@ -20,13 +21,17 @@ class Recipe(db.Model):
     view_count = db.Column(db.Integer, default=0)
     like_count = db.Column(db.Integer, default=0)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
-    category_id = db.Column(db.Integer, db.ForeignKey('categories.id'))
+    category_id = db.Column(db.Integer, db.ForeignKey('categories.id'))  # Keep for backward compatibility
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
     # Relationships
     ratings = db.relationship('Rating', backref='recipe', lazy='dynamic', cascade='all, delete-orphan')
     recipe_ingredients = db.relationship('RecipeIngredient', backref='recipe', lazy='dynamic', cascade='all, delete-orphan')
+    
+    # Many-to-many relationship with categories
+    categories = db.relationship('Category', secondary=recipe_categories, lazy='subquery',
+                               backref=db.backref('recipes', lazy=True))
     
     @property
     def average_rating(self):
@@ -60,7 +65,8 @@ class Recipe(db.Model):
             'average_rating': self.average_rating,
             'rating_count': self.rating_count,
             'user_id': self.user_id,
-            'category_id': self.category_id,
+            'category_id': self.category_id,  # Keep for backward compatibility
+            'categories': [{'id': cat.id, 'name': cat.name, 'slug': cat.slug, 'icon': cat.icon} for cat in self.categories],
             'created_at': self.created_at.isoformat() if self.created_at else None,
             'updated_at': self.updated_at.isoformat() if self.updated_at else None
         }
@@ -81,15 +87,43 @@ class Recipe(db.Model):
         
         # Include user data if available
         if hasattr(self, 'user') and self.user:
-            data['user'] = {
+            user_data = {
                 'id': self.user.id,
                 'username': self.user.username,
                 'full_name': self.user.full_name,
                 'role': self.user.role
             }
+            data['author'] = user_data
+            data['user'] = user_data  # For backward compatibility
+        else:
+            # Fallback: load user data if not already loaded
+            from .user import User
+            user = User.query.get(self.user_id)
+            if user:
+                user_data = {
+                    'id': user.id,
+                    'username': user.username,
+                    'full_name': user.full_name,
+                    'role': user.role
+                }
+                data['author'] = user_data
+                data['user'] = user_data  # For backward compatibility
+            else:
+                data['author'] = None
+                data['user'] = None
         
-        # Include category data if available  
-        if hasattr(self, 'category') and self.category:
+        # Include category data (backward compatibility - use first category if multiple)  
+        if self.categories:
+            # Use first category for backward compatibility
+            first_category = self.categories[0]
+            data['category'] = {
+                'id': first_category.id,
+                'name': first_category.name,
+                'slug': first_category.slug,
+                'icon': first_category.icon
+            }
+        elif hasattr(self, 'category') and self.category:
+            # Fallback to old single category relationship
             data['category'] = {
                 'id': self.category.id,
                 'name': self.category.name,

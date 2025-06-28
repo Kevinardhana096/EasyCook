@@ -49,7 +49,8 @@ const EditRecipePage = () => {
     defaultValues: {
       title: "",
       description: "",
-      category_id: "",
+      category_id: "", // Keep for backward compatibility
+      category_ids: [], // New field for multiple categories
       difficulty: "Medium",
       prep_time: "",
       cook_time: "",
@@ -130,10 +131,15 @@ const EditRecipePage = () => {
         setRecipe(recipeData);
 
         // Reset form with recipe data
+        const existingCategoryIds = recipeData.categories ?
+          recipeData.categories.map(cat => cat.id) :
+          (recipeData.category_id ? [recipeData.category_id] : []);
+
         reset({
           title: recipeData.title || "",
           description: recipeData.description || "",
-          category_id: recipeData.category_id || "",
+          category_id: recipeData.category_id || "", // Keep for backward compatibility
+          category_ids: existingCategoryIds, // Set multiple categories
           difficulty: recipeData.difficulty || "Medium",
           prep_time: recipeData.prep_time || "",
           cook_time: recipeData.cook_time || "",
@@ -277,7 +283,8 @@ const EditRecipePage = () => {
         difficulty: data.difficulty || "Medium",
         image_url: data.image_url || "",
         tips: data.tips || "",
-        category_id: parseInt(data.category_id) || null,
+        category_id: parseInt(data.category_id) || null, // Keep for backward compatibility
+        category_ids: data.category_ids || [], // Send multiple categories
         ingredients: data.ingredients.filter((ing) => ing.name.trim() !== ""),
         // Include nutrition data if provided
         nutrition: {
@@ -501,11 +508,10 @@ const EditRecipePage = () => {
                 <button
                   type="button"
                   onClick={() => setActiveTab("basic")}
-                  className={`tab tab-lg flex-1 transition-all duration-200 rounded-md ${
-                    activeTab === "basic"
+                  className={`tab tab-lg flex-1 transition-all duration-200 rounded-md ${activeTab === "basic"
                       ? "bg-orange-50 text-orange-800 shadow-md"
                       : "text-orange-50 hover:bg-orange-50 hover:text-orange-800"
-                  }
+                    }
                 `}
                 >
                   <FaEdit className="mr-2" />
@@ -514,11 +520,10 @@ const EditRecipePage = () => {
                 <button
                   type="button"
                   onClick={() => setActiveTab("ingredients")}
-                  className={`tab tab-lg flex-1 transition-all duration-200 rounded-md ${
-                    activeTab === "ingredients"
+                  className={`tab tab-lg flex-1 transition-all duration-200 rounded-md ${activeTab === "ingredients"
                       ? "bg-orange-50 text-orange-800 shadow-md"
                       : "text-orange-50 hover:bg-orange-50 hover:text-orange-800"
-                  }
+                    }
                 `}
                 >
                   <FaList className="mr-2" />
@@ -527,11 +532,10 @@ const EditRecipePage = () => {
                 <button
                   type="button"
                   onClick={() => setActiveTab("instructions")}
-                  className={`tab tab-lg flex-1 transition-all duration-200 rounded-md ${
-                    activeTab === "instructions"
+                  className={`tab tab-lg flex-1 transition-all duration-200 rounded-md ${activeTab === "instructions"
                       ? "bg-orange-50 text-orange-800 shadow-md"
                       : "text-orange-50 hover:bg-orange-50 hover:text-orange-800"
-                  }
+                    }
                 `}
                 >
                   <FaUtensils className="mr-2" />
@@ -540,11 +544,10 @@ const EditRecipePage = () => {
                 <button
                   type="button"
                   onClick={() => setActiveTab("nutrition")}
-                  className={`tab tab-lg flex-1 transition-all duration-200 rounded-md ${
-                    activeTab === "nutrition"
+                  className={`tab tab-lg flex-1 transition-all duration-200 rounded-md ${activeTab === "nutrition"
                       ? "bg-orange-50 text-orange-800 shadow-md"
                       : "text-orange-50 hover:bg-orange-50 hover:text-orange-800"
-                  }`}
+                    }`}
                 >
                   <FaEye className="mr-2" />
                   Nutrition
@@ -568,9 +571,8 @@ const EditRecipePage = () => {
                         })}
                         type="text"
                         placeholder="e.g., Grandma's Secret Chocolate Chip Cookies"
-                        className={`input input-bordered input-lg w-full bg-orange-50 text-black ${
-                          errors.title ? "input-error" : ""
-                        }`}
+                        className={`input input-bordered input-lg w-full bg-orange-50 text-black ${errors.title ? "input-error" : ""
+                          }`}
                       />
                       {errors.title && (
                         <label className="label">
@@ -592,9 +594,8 @@ const EditRecipePage = () => {
                         {...register("description", {
                           required: "Description is required",
                         })}
-                        className={`textarea textarea-bordered h-32  bg-orange-50 text-black ${
-                          errors.description ? "textarea-error" : ""
-                        }`}
+                        className={`textarea textarea-bordered h-32  bg-orange-50 text-black ${errors.description ? "textarea-error" : ""
+                          }`}
                         placeholder="Describe your recipe, its origin, what makes it unique, or why you love it..."
                       />
                       {errors.description && (
@@ -655,24 +656,30 @@ const EditRecipePage = () => {
 
                     {/* Category and Details Grid */}
                     <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4 font-brand">
-                      {/* Category */}
-                      <div className="form-control">
+                      {/* Categories - Multiple Selection */}
+                      <div className="form-control lg:col-span-2">
                         <label className="label">
                           <span className="font-medium text-orange-800 label-text">
-                            Category
+                            Categories
                           </span>
                         </label>
-                        <select
-                          {...register("category_id")}
-                          className="select select-bordered  bg-orange-50 text-black"
-                        >
-                          <option value="">Select Category</option>
+                        <div className="grid grid-cols-2 gap-2 p-4 border border-orange-200 rounded-lg bg-orange-50">
                           {categories.map((category) => (
-                            <option key={category.id} value={category.id}>
-                              {category.name}
-                            </option>
+                            <div key={category.id} className="form-control">
+                              <label className="gap-3 cursor-pointer label justify-start">
+                                <input
+                                  type="checkbox"
+                                  className="checkbox checkbox-sm border-orange-300"
+                                  value={category.id}
+                                  {...register("category_ids")}
+                                />
+                                <span className="text-sm text-orange-800">
+                                  {category.icon} {category.name}
+                                </span>
+                              </label>
+                            </div>
                           ))}
-                        </select>
+                        </div>
                       </div>
 
                       {/* Difficulty */}
@@ -848,9 +855,8 @@ const EditRecipePage = () => {
                         {...register("instructions", {
                           required: "Instructions are required",
                         })}
-                        className={`textarea textarea-bordered h-64 ${
-                          errors.instructions ? "textarea-error" : ""
-                        }`}
+                        className={`textarea textarea-bordered h-64 ${errors.instructions ? "textarea-error" : ""
+                          }`}
                         placeholder="1. ... "
                       />
                       {errors.instructions && (
@@ -969,9 +975,8 @@ const EditRecipePage = () => {
               <button
                 type="submit"
                 disabled={submitLoading || submitSuccess}
-                className={`btn btn-lg ${
-                  submitLoading ? "loading" : ""
-                } text-orange-900 border-none border-orange-900 bg-white hover:bg-orange-100 disabled:opacity-50`}
+                className={`btn btn-lg ${submitLoading ? "loading" : ""
+                  } text-orange-900 border-none border-orange-900 bg-white hover:bg-orange-100 disabled:opacity-50`}
               >
                 {submitLoading ? (
                   <span className="loading loading-spinner loading-md"></span>

@@ -7,6 +7,7 @@ import {
   FaToggleOn,
   FaToggleOff,
   FaEdit,
+  FaTag,
 } from "react-icons/fa";
 import { useState } from "react";
 import FavoriteButton from "./FavoriteButton";
@@ -47,6 +48,8 @@ const RecipeCard = ({
     views = 0,
     is_published = true, // Default to true for backward compatibility
     user_id,
+    categories = [], // Multiple categories support
+    category, // Single category for backward compatibility
   } = recipe;
 
   const imageSource = image || image_url;
@@ -169,6 +172,32 @@ const RecipeCard = ({
         </h3>
         <p className="text-gray-700 line-clamp-2 text-sm">{description}</p>
 
+        {/* Categories */}
+        {(categories.length > 0 || category) && (
+          <div className="flex flex-wrap gap-1 mb-2">
+            {categories.length > 0 ? (
+              categories.map((cat, index) => (
+                <Link
+                  key={cat.id || index}
+                  to={`/categories/${cat.slug}`}
+                  className="inline-flex items-center px-2 py-1 bg-orange-200 text-orange-800 text-xs rounded-full hover:bg-orange-300 transition-colors"
+                >
+                  <FaTag className="mr-1" />
+                  {cat.name}
+                </Link>
+              ))
+            ) : category ? (
+              <Link
+                to={`/categories/${category.slug}`}
+                className="inline-flex items-center px-2 py-1 bg-orange-200 text-orange-800 text-xs rounded-full hover:bg-orange-300 transition-colors"
+              >
+                <FaTag className="mr-1" />
+                {category.name}
+              </Link>
+            ) : null}
+          </div>
+        )}
+
         {/* Rating and author */}
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-4">
@@ -187,7 +216,9 @@ const RecipeCard = ({
             {showAuthor && author && (
               <div className="flex items-center text-gray-500">
                 <FaUser className="mr-1 text-xs" />
-                <span className="text-sm">{author}</span>
+                <span className="text-sm">
+                  {typeof author === 'string' ? author : author.username || author.full_name || 'Unknown'}
+                </span>
               </div>
             )}
           </div>

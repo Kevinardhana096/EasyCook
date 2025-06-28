@@ -30,44 +30,40 @@ const CategoriesOverviewPage = () => {
     lastUpdated,
   } = useStats(true, 180000); // Auto-refresh every 3 minutes
 
-  // Icon mapping for categories
+  // Icon mapping for categories (konsisten bahasa Indonesia)
   const iconMap = {
-    "main-course": FaUtensils,
-    appetizer: FaFire,
-    dessert: FaCookie,
-    beverage: FaCoffee,
-    snack: FaCarrot,
-    traditional: FaStar,
-    vegetarian: FaCarrot,
+    "hidangan-utama": FaUtensils,
+    "pembuka": FaFire,
+    "penutup": FaCookie,
+    "minuman": FaCoffee,
+    "camilan": FaCarrot,
+    "tradisional": FaStar,
   };
 
   // Color mapping for categories
   const colorMap = {
-    "main-course": "text-red-500",
-    appetizer: "text-yellow-500",
-    dessert: "text-pink-500",
-    beverage: "text-blue-500",
-    snack: "text-green-500",
-    traditional: "text-purple-500",
-    vegetarian: "text-green-600",
+    "hidangan-utama": "text-red-500",
+    "pembuka": "text-yellow-500",
+    "penutup": "text-pink-500",
+    "minuman": "text-blue-500",
+    "camilan": "text-green-500",
+    "tradisional": "text-purple-500",
   };
 
   // Default images for categories
   const imageMap = {
-    "main-course":
+    "hidangan-utama":
       "https://images.unsplash.com/photo-1567620905732-2d1ec7ab7445?w=400&h=300&fit=crop",
-    appetizer:
+    "pembuka":
       "https://images.unsplash.com/photo-1541795795328-f073b763494e?w=400&h=300&fit=crop",
-    dessert:
+    "penutup":
       "https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=400&h=300&fit=crop",
-    beverage:
+    "minuman":
       "https://images.unsplash.com/photo-1556679343-c7306c1976bc?w=400&h=300&fit=crop",
-    snack:
+    "camilan":
       "https://images.unsplash.com/photo-1621939514649-280e2ee25f60?w=400&h=300&fit=crop",
-    traditional:
+    "tradisional":
       "https://images.unsplash.com/photo-1562967916-eb82221dfb92?w=400&h=300&fit=crop",
-    vegetarian:
-      "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=400&h=300&fit=crop",
   };
 
   useEffect(() => {
@@ -90,7 +86,7 @@ const CategoriesOverviewPage = () => {
           image:
             category.image_url ||
             imageMap[category.slug] ||
-            imageMap["main-course"],
+            imageMap["hidangan-utama"],
           count: category.recipe_count || 0,
           icon: iconMap[category.slug] || "utensils",
           color: colorMap[category.slug] || "text-gray-500",
@@ -108,10 +104,10 @@ const CategoriesOverviewPage = () => {
     }
   };
 
-  // Mock data untuk fallback jika API gagal
+  // Mock data untuk fallback jika API gagal (kategori konsisten bahasa Indonesia)
   const mockCategories = [
     {
-      id: "main-course",
+      id: "hidangan-utama",
       name: "Hidangan Utama",
       description: "Resep makanan pokok untuk makan siang dan malam",
       image:
@@ -122,7 +118,29 @@ const CategoriesOverviewPage = () => {
       featured: true,
     },
     {
-      id: "appetizer",
+      id: "penutup",
+      name: "Penutup",
+      description: "Dessert dan makanan manis untuk mengakhiri makan",
+      image:
+        "https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=400&h=300&fit=crop",
+      count: 30,
+      icon: "cookie",
+      color: "text-pink-500",
+      featured: true,
+    },
+    {
+      id: "tradisional",
+      name: "Tradisional",
+      description: "Resep masakan tradisional Nusantara",
+      image:
+        "https://images.unsplash.com/photo-1562967916-eb82221dfb92?w=400&h=300&fit=crop",
+      count: 40,
+      icon: "star",
+      color: "text-purple-500",
+      featured: true,
+    },
+    {
+      id: "pembuka",
       name: "Pembuka",
       description: "Makanan ringan untuk membuka selera makan",
       image:
@@ -130,6 +148,28 @@ const CategoriesOverviewPage = () => {
       count: 25,
       icon: "fire",
       color: "text-yellow-500",
+      featured: false,
+    },
+    {
+      id: "minuman",
+      name: "Minuman",
+      description: "Berbagai jenis minuman segar dan hangat",
+      image:
+        "https://images.unsplash.com/photo-1556679343-c7306c1976bc?w=400&h=300&fit=crop",
+      count: 20,
+      icon: "coffee",
+      color: "text-blue-500",
+      featured: false,
+    },
+    {
+      id: "camilan",
+      name: "Camilan",
+      description: "Makanan ringan untuk menemani waktu santai",
+      image:
+        "https://images.unsplash.com/photo-1621939514649-280e2ee25f60?w=400&h=300&fit=crop",
+      count: 35,
+      icon: "carrot",
+      color: "text-green-500",
       featured: false,
     },
   ];
@@ -141,7 +181,7 @@ const CategoriesOverviewPage = () => {
   // Show loading spinner if loading
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-orange-50">
+      <div className="flex items-center justify-center min-h-screen bg-orange-50">
         <LoadingSpinner />
       </div>
     );
@@ -166,13 +206,13 @@ const CategoriesOverviewPage = () => {
   return (
     <div className="min-h-screen bg-orange-50">
       {/* Hero Section */}
-      <div className="relative bg-orange-50 text-orange-800 overflow-hidden font-brand">
-        <div className="relative max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 mt-24">
+      <div className="relative overflow-hidden text-orange-800 bg-orange-50 font-brand">
+        <div className="relative max-w-5xl px-4 mx-auto mt-24 sm:px-6 lg:px-8">
           <div className="text-center">
-            <h1 className="text-4xl md:text-5xl font-semibold mb-4 tracking-tight underline">
+            <h1 className="mb-4 text-4xl font-semibold tracking-tight underline md:text-5xl">
               Explore the Recipe Category
             </h1>
-            <p className="text-lg text-orange-700 mb-12 max-w-2xl mx-auto leading-relaxed">
+            <p className="max-w-2xl mx-auto mb-12 text-lg leading-relaxed text-orange-700">
               Explore recipes by category and cook what you love.
             </p>
 
@@ -184,30 +224,30 @@ const CategoriesOverviewPage = () => {
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   placeholder="Find Category ..."
-                  className="w-full px-6 py-4 pr-14 rounded-full text-gray-600 text-base bg-white shadow-lg focus:outline-none focus:ring-4 focus:ring-white/30 border-0"
+                  className="w-full px-6 py-4 text-base text-gray-600 bg-white border-0 rounded-full shadow-lg pr-14 focus:outline-none focus:ring-4 focus:ring-white/30"
                 />
-                <div className="absolute right-2 top-1/2 -translate-y-1/2 bg-orange-800 hover:bg-orange-900 text-orange-50 p-3 rounded-full transition-colors cursor-pointer">
+                <div className="absolute p-3 transition-colors -translate-y-1/2 bg-orange-800 rounded-full cursor-pointer right-2 top-1/2 hover:bg-orange-900 text-orange-50">
                   <FaSearch />
                 </div>
               </div>
             </div>
 
             {/* Stats */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-lg mx-auto">
+            <div className="grid max-w-lg grid-cols-1 gap-6 mx-auto md:grid-cols-3">
               <div className="text-center">
-                <div className="text-2xl md:text-3xl font-bold mb-1">
+                <div className="mb-1 text-2xl font-bold md:text-3xl">
                   {stats.total_categories}
                 </div>
                 <div className="text-sm text-orange-700">Category</div>
               </div>
               <div className="text-center">
-                <div className="text-2xl md:text-3xl font-bold mb-1">
+                <div className="mb-1 text-2xl font-bold md:text-3xl">
                   {stats.total_recipes}
                 </div>
                 <div className="text-sm text-orange-700">Total Recipe</div>
               </div>
               <div className="text-center">
-                <div className="text-2xl md:text-3xl font-bold mb-1">
+                <div className="mb-1 text-2xl font-bold md:text-3xl">
                   {stats.average_rating || 4.8}
                 </div>
                 <div className="text-sm text-orange-700">Average Rating</div>
@@ -217,27 +257,22 @@ const CategoriesOverviewPage = () => {
         </div>
       </div>
 
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+      <div className="max-w-6xl px-4 py-16 mx-auto sm:px-6 lg:px-8">
         {/* Featured Categories */}
         {featuredCategories.length > 0 && (
           <section className="mb-16">
             <div className="flex items-center justify-between mb-8">
               <div>
-                <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">
+                <h2 className="mb-2 text-2xl font-bold text-gray-900 md:text-3xl">
                   Popular Categories
                 </h2>
                 <p className="text-gray-600">
                   Categories most favored by others
                 </p>
               </div>
-
-              <div className="hidden md:flex items-center text-orange-600 hover:text-orange-700 cursor-pointer transition-colors group">
-                <span className="mr-2 font-medium">Lihat Semua</span>
-                <FaArrowRight className="transform group-hover:translate-x-1 transition-transform" />
-              </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
               {featuredCategories.map((category) => (
                 <CategoryCard
                   key={category.id}
@@ -248,28 +283,13 @@ const CategoriesOverviewPage = () => {
             </div>
           </section>
         )}
-
         {/* All Categories */}
         <section>
-          <div className="flex items-center justify-between mb-8 mt-7 font-brand">
-            <div>
-              <h2 className="text-2xl md:text-3xl font-semibold text-orange-900 mb-2">
-                Popular Categories
-              </h2>
-              <p className="text-orange-800 text-base">
-                Browse all available recipe categories
-                {searchTerm && (
-                  <span className="inline-flex items-center ml-2 px-3 py-1 bg-orange-100 text-orange-700 rounded-full text-sm font-medium">
-                    "{searchTerm}"
-                  </span>
-                )}
-              </p>
-            </div>
-
+          <div className="flex items-center justify-between mt-7 font-brand">
             {searchTerm && (
               <button
                 onClick={() => setSearchTerm("")}
-                className="text-orange-800 hover:text-orange-700 text-sm font-medium px-4 py-2 rounded-lg hover:bg-orange-50 transition-colors"
+                className="px-4 py-2 text-sm font-medium text-orange-800 transition-colors rounded-lg hover:text-orange-700 hover:bg-orange-50"
               >
                 Hapus Filter
               </button>
@@ -277,7 +297,7 @@ const CategoriesOverviewPage = () => {
           </div>
 
           {filteredCategories.length > 0 ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
               {regularCategories.map((category) => (
                 <CategoryCard
                   key={category.id}
@@ -287,20 +307,20 @@ const CategoriesOverviewPage = () => {
               ))}
             </div>
           ) : (
-            <div className="text-center py-20 font-brand">
-              <div className="w-24 h-24 mx-auto mb-6 bg-gray-100 rounded-full flex items-center justify-center">
+            <div className="py-20 text-center font-brand">
+              <div className="flex items-center justify-center w-24 h-24 mx-auto mb-6 bg-gray-100 rounded-full">
                 <FaSearch className="text-3xl text-gray-400" />
               </div>
-              <h3 className="text-xl font-semibold text-gray-700 mb-2">
+              <h3 className="mb-2 text-xl font-semibold text-gray-700">
                 Category not found
               </h3>
-              <p className="text-gray-500 mb-8 max-w-md mx-auto">
+              <p className="max-w-md mx-auto mb-8 text-gray-500">
                 There is no category that matches the search "{searchTerm}".
                 Try other keywords or look at all categories.
               </p>
               <button
                 onClick={() => setSearchTerm("")}
-                className="inline-flex items-center px-6 py-3 bg-orange-900 hover:bg-orange-800 text-white font-medium rounded-lg transition-colors"
+                className="inline-flex items-center px-6 py-3 font-medium text-white transition-colors bg-orange-900 rounded-lg hover:bg-orange-800"
               >
                 See all categories
               </button>

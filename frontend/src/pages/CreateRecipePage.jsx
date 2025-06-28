@@ -44,7 +44,8 @@ const CreateRecipePage = () => {
     defaultValues: {
       title: "",
       description: "",
-      category_id: "",
+      category_id: "", // Keep for backward compatibility
+      category_ids: [], // New field for multiple categories
       difficulty: "Medium",
       prep_time: "",
       cook_time: "",
@@ -144,7 +145,8 @@ const CreateRecipePage = () => {
         difficulty: data.difficulty || "Medium",
         image_url: data.image_url || "",
         tips: data.tips || "",
-        category_id: parseInt(data.category_id) || null,
+        category_id: parseInt(data.category_id) || null, // Keep for backward compatibility
+        category_ids: data.category_ids || [], // New field for multiple categories
         is_published: true,
         // Include nutrition data if provided
         nutrition: {
@@ -331,11 +333,10 @@ const CreateRecipePage = () => {
               <div className="flex flex-wrap justify-center gap-2 lg:justify-start">
                 <button
                   type="button"
-                  className={`relative px-4 py-2 rounded-lg font-medium transition-all duration-200 ${
-                    activeTab === "basic"
+                  className={`relative px-4 py-2 rounded-lg font-medium transition-all duration-200 ${activeTab === "basic"
                       ? "bg-orange-50 text-orange-800"
                       : "text-orange-50 hover:bg-orange-50 hover:text-orange-800"
-                  }`}
+                    }`}
                   onClick={() => setActiveTab("basic")}
                 >
                   <FaEdit className="mr-2 text-lg inline-block" />
@@ -347,11 +348,10 @@ const CreateRecipePage = () => {
                 <button
                   type="button"
                   onClick={() => setActiveTab("ingredients")}
-                  className={`relative px-4 py-2 rounded-lg font-medium transition-all duration-200 ${
-                    activeTab === "ingredients"
+                  className={`relative px-4 py-2 rounded-lg font-medium transition-all duration-200 ${activeTab === "ingredients"
                       ? "bg-orange-50 text-orange-800"
                       : "text-orange-50 hover:bg-orange-50 hover:text-orange-800"
-                  }`}
+                    }`}
                 >
                   <span className="flex items-center gap-2">
                     <FaList className="text-lg" />
@@ -364,11 +364,10 @@ const CreateRecipePage = () => {
                 <button
                   type="button"
                   onClick={() => setActiveTab("instructions")}
-                  className={`relative px-4 py-2 rounded-lg font-medium transition-all duration-200 ${
-                    activeTab === "instructions"
+                  className={`relative px-4 py-2 rounded-lg font-medium transition-all duration-200 ${activeTab === "instructions"
                       ? "bg-orange-50 text-orange-800"
                       : "text-orange-50 hover:bg-orange-50 hover:text-orange-800"
-                  }`}
+                    }`}
                 >
                   <span className="flex items-center gap-2">
                     <FaUtensils className="text-lg" />
@@ -381,11 +380,10 @@ const CreateRecipePage = () => {
                 <button
                   type="button"
                   onClick={() => setActiveTab("nutrition")}
-                  className={`relative px-4 py-2 rounded-lg font-medium transition-all duration-200 ${
-                    activeTab === "nutrition"
+                  className={`relative px-4 py-2 rounded-lg font-medium transition-all duration-200 ${activeTab === "nutrition"
                       ? "bg-orange-50 text-orange-800"
                       : "text-orange-50 hover:bg-orange-50 hover:text-orange-800"
-                  }`}
+                    }`}
                 >
                   <span className="flex items-center gap-2">
                     <FaUsers className="text-lg" />
@@ -423,9 +421,8 @@ const CreateRecipePage = () => {
                         <input
                           type="text"
                           placeholder="Title Here"
-                          className={`recipe-input ${
-                            errors.title ? "border-red-400" : ""
-                          }`}
+                          className={`recipe-input ${errors.title ? "border-red-400" : ""
+                            }`}
                           {...register("title", {
                             required: "Recipe title is required",
                             minLength: {
@@ -451,9 +448,8 @@ const CreateRecipePage = () => {
                         </label>
                         <textarea
                           placeholder="Describe your recipe in here"
-                          className={`recipe-textarea h-32 ${
-                            errors.description ? "border-red-400" : ""
-                          }`}
+                          className={`recipe-textarea h-32 ${errors.description ? "border-red-400" : ""
+                            }`}
                           {...register("description", {
                             required: "Description is required",
                             minLength: {
@@ -476,28 +472,32 @@ const CreateRecipePage = () => {
                         <div className="form-control">
                           <label className="label">
                             <span className="flex items-center text-lg font-semibold text-orange-800">
-                              Category *
+                              Categories *
                             </span>
                           </label>
-                          <select
-                            className={`recipe-select ${
-                              errors.category_id ? "border-red-400" : ""
-                            }`}
-                            {...register("category_id", {
-                              required: "Category is required",
-                            })}
-                          >
-                            <option value="">Choose category</option>
+                          <div className="grid grid-cols-1 gap-2 p-4 border border-orange-200 rounded-lg bg-orange-50">
                             {categories.map((category) => (
-                              <option key={category.id} value={category.id}>
-                                {category.icon} {category.name}
-                              </option>
+                              <div key={category.id} className="form-control">
+                                <label className="label cursor-pointer justify-start gap-3">
+                                  <input
+                                    type="checkbox"
+                                    className="checkbox checkbox-sm border-orange-300"
+                                    value={category.id}
+                                    {...register("category_ids", {
+                                      required: "Please select at least one category",
+                                    })}
+                                  />
+                                  <span className="text-sm text-orange-800">
+                                    {category.icon} {category.name}
+                                  </span>
+                                </label>
+                              </div>
                             ))}
-                          </select>
-                          {errors.category_id && (
+                          </div>
+                          {errors.category_ids && (
                             <p className="flex items-center mt-1 text-sm text-red-500">
                               <span className="mr-1">⚠️</span>
-                              {errors.category_id.message}
+                              {errors.category_ids.message}
                             </p>
                           )}
                         </div>
@@ -517,8 +517,8 @@ const CreateRecipePage = () => {
                                 {difficulty === "Easy"
                                   ? "🟢 Easy"
                                   : difficulty === "Medium"
-                                  ? "🟡 Medium"
-                                  : "🔴 Hard"}{" "}
+                                    ? "🟡 Medium"
+                                    : "🔴 Hard"}{" "}
                                 {difficulty}
                               </option>
                             ))}
@@ -692,11 +692,10 @@ const CreateRecipePage = () => {
                               <input
                                 type="text"
                                 placeholder="e.g., Chicken breast, Onion, Garlic..."
-                                className={`recipe-input ${
-                                  errors.ingredients?.[index]?.name
+                                className={`recipe-input ${errors.ingredients?.[index]?.name
                                     ? "border-red-400"
                                     : ""
-                                }`}
+                                  }`}
                                 {...register(`ingredients.${index}.name`, {
                                   required: "Ingredient name is required",
                                 })}
@@ -718,11 +717,10 @@ const CreateRecipePage = () => {
                                 type="number"
                                 placeholder="250"
                                 step="0.1"
-                                className={`recipe-input ${
-                                  errors.ingredients?.[index]?.quantity
+                                className={`recipe-input ${errors.ingredients?.[index]?.quantity
                                     ? "border-red-400"
                                     : ""
-                                }`}
+                                  }`}
                                 {...register(`ingredients.${index}.quantity`, {
                                   required: "Quantity is required",
                                 })}
@@ -841,9 +839,8 @@ const CreateRecipePage = () => {
                       <div className="relative">
                         <textarea
                           placeholder="Write your cooking instructions here ..."
-                          className={`recipe-textarea h-80 ${
-                            errors.instructions ? "border-red-400" : ""
-                          }`}
+                          className={`recipe-textarea h-80 ${errors.instructions ? "border-red-400" : ""
+                            }`}
                           {...register("instructions", {
                             required: "Instructions are required",
                             minLength: {
@@ -1082,10 +1079,10 @@ const CreateRecipePage = () => {
                           {activeTab === "basic"
                             ? "Basic Info"
                             : activeTab === "ingredients"
-                            ? "Ingredients"
-                            : activeTab === "instructions"
-                            ? "Instructions"
-                            : "Nutrition"}
+                              ? "Ingredients"
+                              : activeTab === "instructions"
+                                ? "Instructions"
+                                : "Nutrition"}
                         </span>
                         {watch("title") && (
                           <span className="px-3 py-1 text-sm text-green-600 bg-green-100 rounded-full">
@@ -1125,7 +1122,7 @@ const CreateRecipePage = () => {
                     {/* Publish Button */}
                     <button
                       type="submit"
-                      className="inline-flex items-center justify-center px-8 py-3 rounded-lg text-white text-lg text-sm bg-orange-800 hover:bg-orange-900 shadow-md hover:shadow-lg transition-all duration-200"
+                      className="inline-flex items-center justify-center px-8 py-3 rounded-lg text-white text-lg bg-orange-800 hover:bg-orange-900 shadow-md hover:shadow-lg transition-all duration-200"
                       disabled={isSubmitting || loading}
                     >
                       {isSubmitting || loading ? (
