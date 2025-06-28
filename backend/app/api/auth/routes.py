@@ -430,7 +430,7 @@ def get_my_recipes():
         print(f"📊 Found {paginated_recipes.total} total recipes for user {current_user_id}")
         print(f"📄 Page {page}: {len(paginated_recipes.items)} recipes")
         
-        recipes_data = [recipe.to_dict(include_details=False) for recipe in paginated_recipes.items]
+        recipes_data = [recipe.to_dict(include_details=False, current_user_id=int(current_user_id) if current_user_id else None) for recipe in paginated_recipes.items]
         for recipe in recipes_data:
             print(f"  - Recipe ID {recipe['id']}: {recipe['title']} (published: {recipe['is_published']})")
         
@@ -496,7 +496,7 @@ def get_user_recipes_by_id(user_id):
         
         return jsonify({
             'message': 'User recipes retrieved successfully',
-            'recipes': [recipe.to_dict(include_details=False) for recipe in paginated_recipes.items],
+            'recipes': [recipe.to_dict(include_details=False, current_user_id=current_user_id) for recipe in paginated_recipes.items],
             'user': user.to_dict(),
             'pagination': {
                 'page': page,

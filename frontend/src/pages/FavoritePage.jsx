@@ -14,18 +14,17 @@ import {
 } from "react-icons/fa";
 import RecipeCard from "../components/recipe/RecipeCard";
 import LoadingSpinner from "../components/common/LoadingSpinner";
-import api from "../api/recipes";
+import { useFavorites } from "../contexts/FavoritesContext";
 import { useAuth } from "../contexts/AuthContext";
 
 const FavoritePage = () => {
-  const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [sortBy, setSortBy] = useState("newest");
   const [filterBy, setFilterBy] = useState("all");
   const [viewMode, setViewMode] = useState("grid"); // grid or list
   const [favoriteRecipes, setFavoriteRecipes] = useState([]);
-  const [error, setError] = useState(null);
   const { user } = useAuth();
+  const { loadFavorites, isLoading } = useFavorites();
 
   useEffect(() => {
     if (user) {
@@ -35,8 +34,8 @@ const FavoritePage = () => {
 
   const fetchFavoriteRecipes = async () => {
     try {
-      setLoading(true);
-      const response = await api.recipes.getFavorites();
+      const { recipesAPI } = await import("../api/recipes");
+      const response = await recipesAPI.getFavorites();
 
       // Transform recipes to add author field for RecipeCard compatibility
       const transformedRecipes = (response.data.recipes || []).map(
@@ -44,27 +43,38 @@ const FavoritePage = () => {
           ...recipe,
           author:
             recipe.user?.username || recipe.user?.full_name || "Unknown Chef",
+          rating: recipe.average_rating || 0,
+          likes: recipe.like_count || 0,
+          views: recipe.view_count || 0,
+          image: recipe.image_url,
+          cookTime: recipe.cook_time,
+          isFavorited: true, // All recipes in favorites are favorited
         })
       );
 
       setFavoriteRecipes(transformedRecipes);
     } catch (err) {
       console.error("Error fetching favorite recipes:", err);
-      setError("Gagal mengambil data resep favorit");
       // Use mock data as fallback
       setFavoriteRecipes(mockFavoriteRecipes);
-    } finally {
-      setLoading(false);
     }
   };
 
-  const handleToggleFavorite = async (recipeId) => {
+  const handleToggleFavorite = async (recipeId, newFavoritedState) => {
     try {
-      await api.recipes.toggleFavorite(recipeId);
-      // Refresh favorite recipes
-      fetchFavoriteRecipes();
+      if (!newFavoritedState) {
+        // Recipe was removed from favorites - remove it from the list immediately
+        setFavoriteRecipes((prevRecipes) =>
+          prevRecipes.filter((recipe) => recipe.id !== recipeId)
+        );
+      } else {
+        // Recipe was added to favorites - refresh the list
+        await fetchFavoriteRecipes();
+      }
     } catch (err) {
-      console.error("Error toggling favorite:", err);
+      console.error("Error handling favorite toggle:", err);
+      // If there's an error, refresh the list to ensure consistency
+      await fetchFavoriteRecipes();
     }
   };
 
@@ -135,14 +145,6 @@ const FavoritePage = () => {
       }
     });
 
-  const handleRemoveFromFavorites = async (recipeId) => {
-    try {
-      await handleToggleFavorite(recipeId);
-    } catch (err) {
-      console.error("Error removing from favorites:", err);
-    }
-  };
-
   if (!user) {
     return (
       <div className="min-h-screen bg-base-200">
@@ -191,11 +193,11 @@ const FavoritePage = () => {
                 <div className="text-2xl md:text-3xl font-bold mb-1">
                   {favoriteRecipes.length > 0
                     ? (
-                        favoriteRecipes.reduce(
-                          (avg, recipe) => avg + (recipe.average_rating || 0),
-                          0
-                        ) / favoriteRecipes.length
-                      ).toFixed(1)
+                      favoriteRecipes.reduce(
+                        (avg, recipe) => avg + (recipe.average_rating || 0),
+                        0
+                      ) / favoriteRecipes.length
+                    ).toFixed(1)
                     : 0}
                 </div>
                 <div className="text-xs text-orange-00">Average Rating</div>
@@ -250,21 +252,19 @@ const FavoritePage = () => {
               <div className="flex bg-gray-100 rounded-lg p-1">
                 <button
                   onClick={() => setViewMode("grid")}
-                  className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${
-                    viewMode === "grid"
+                  className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${viewMode === "grid"
                       ? "bg-white text-orange-600 shadow-sm"
                       : "text-gray-600 hover:text-gray-900"
-                  }`}
+                    }`}
                 >
                   Grid
                 </button>
                 <button
                   onClick={() => setViewMode("list")}
-                  className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${
-                    viewMode === "list"
+                  className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${viewMode === "list"
                       ? "bg-white text-orange-600 shadow-sm"
                       : "text-gray-600 hover:text-gray-900"
-                  }`}
+                    }`}
                 >
                   List
                 </button>
@@ -274,91 +274,31 @@ const FavoritePage = () => {
         </div>
 
         {/* Loading State */}
-        {loading && (
+        {isLoading && (
           <div className="flex justify-center py-16 bg-orange-50">
             <LoadingSpinner />
           </div>
         )}
 
-        {/* Error State */}
-        {error && !loading && (
-          <div className="py-16 text-center">
-            <div className="w-16 h-16 mx-auto mb-4 bg-red-100 rounded-full flex items-center justify-center">
-              <svg
-                className="w-8 h-8 text-red-500"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"
-                />
-              </svg>
-            </div>
-            <h3 className="mb-2 text-xl font-semibold text-gray-900">
-              Error occurred
-            </h3>
-            <p className="text-gray-600 mb-6">{error}</p>
-            <button
-              onClick={fetchFavoriteRecipes}
-              className="inline-flex items-center px-4 py-2 bg-pink-500 hover:bg-pink-600 text-white font-medium rounded-lg transition-colors"
-            >
-              Try Again
-            </button>
-          </div>
-        )}
-
         {/* Recipes Content */}
-        {!loading && !error && (
+        {!isLoading && (
           <>
             {filteredRecipes.length > 0 ? (
               <div
-                className={`${
-                  viewMode === "grid"
+                className={`${viewMode === "grid"
                     ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
                     : "space-y-4"
-                }`}
+                  }`}
               >
                 {filteredRecipes.map((recipe) => (
                   <div key={recipe.id} className="relative group">
                     <div className="bg-white rounded-xl border border-gray-100 overflow-hidden transition-all duration-300">
                       <RecipeCard
                         recipe={recipe}
-                        className={`${
-                          viewMode === "list" ? "flex flex-row" : ""
-                        } border-0`}
+                        onFavoriteToggle={handleToggleFavorite}
+                        className={`${viewMode === "list" ? "flex flex-row" : ""
+                          } border-0`}
                       />
-
-                      {/* Favorite Actions (selalu terlihat tanpa hover) */}
-                      <div className="absolute top-3 right-3">
-                        <div className="flex gap-2">
-                          <button
-                            onClick={() => handleRemoveFromFavorites(recipe.id)}
-                            className="p-2 text-white bg-red-500 rounded-full shadow-lg transition-all transform"
-                            title="Hapus dari favorit"
-                          >
-                            <FaTrash className="text-sm" />
-                          </button>
-                          <button
-                            onClick={() => {
-                              navigator.share?.({
-                                title: recipe.title,
-                                text: recipe.description,
-                                url:
-                                  window.location.origin +
-                                  `/recipes/${recipe.id}`,
-                              }) || console.log("Share not supported");
-                            }}
-                            className="p-2 text-white bg-blue-500 rounded-full shadow-lg transition-all transform"
-                            title="Bagikan resep"
-                          >
-                            <FaShare className="text-sm" />
-                          </button>
-                        </div>
-                      </div>
 
                       {/* Favorite Notes (selalu terlihat jika ada) */}
                       {recipe.notes && (

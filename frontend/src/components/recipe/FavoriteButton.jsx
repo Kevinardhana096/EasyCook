@@ -1,16 +1,21 @@
 import { useState } from 'react';
 import { FaHeart } from 'react-icons/fa';
+import { useFavorites } from '../../contexts/FavoritesContext';
+import { useAuth } from '../../contexts/AuthContext';
 
 const FavoriteButton = ({
     recipeId,
-    initialFavorited = false,
     size = "md",
     className = "",
     showTooltip = true,
     onToggle = null
 }) => {
-    const [isFavorited, setIsFavorited] = useState(initialFavorited);
+    const { user } = useAuth();
+    const { isFavorited, toggleFavorite } = useFavorites();
     const [isAnimating, setIsAnimating] = useState(false);
+
+    // Get the current favorite status from global context
+    const currentlyFavorited = isFavorited(recipeId);
 
     const sizeClasses = {
         sm: "p-1.5 text-sm",
@@ -18,20 +23,31 @@ const FavoriteButton = ({
         lg: "p-3 text-lg"
     };
 
-    const handleToggle = (e) => {
+    const handleToggle = async (e) => {
         e.preventDefault();
         e.stopPropagation();
 
-        setIsAnimating(true);
-        setIsFavorited(!isFavorited);
-
-        // Callback untuk parent component
-        if (onToggle) {
-            onToggle(recipeId, !isFavorited);
+        if (!user) {
+            // Optionally redirect to login or show login modal
+            alert('Please login to add favorites');
+            return;
         }
 
-        // TODO: Implement API call to backend
-        console.log(`${!isFavorited ? 'Added to' : 'Removed from'} favorites:`, recipeId);
+        setIsAnimating(true);
+
+        try {
+            // Use the global favorites context to toggle
+            const newFavoritedState = await toggleFavorite(recipeId);
+
+            // Callback untuk parent component
+            if (onToggle) {
+                onToggle(recipeId, newFavoritedState);
+            }
+
+            console.log(`${newFavoritedState ? 'Added to' : 'Removed from'} favorites:`, recipeId);
+        } catch (error) {
+            console.error('Failed to toggle favorite:', error);
+        }
 
         // Reset animation
         setTimeout(() => setIsAnimating(false), 300);
@@ -43,7 +59,7 @@ const FavoriteButton = ({
                 onClick={handleToggle}
                 className={`
           relative rounded-full transition-all duration-200 
-          ${isFavorited
+          ${currentlyFavorited
                         ? 'bg-red-500 text-white hover:bg-red-600'
                         : 'bg-white/80 text-gray-600 hover:bg-white hover:text-red-500'
                     }
@@ -51,7 +67,7 @@ const FavoriteButton = ({
           ${isAnimating ? 'scale-125' : 'hover:scale-110'}
           ${className}
         `}
-                aria-label={isFavorited ? 'Hapus dari favorit' : 'Tambah ke favorit'}
+                aria-label={currentlyFavorited ? 'Hapus dari favorit' : 'Tambah ke favorit'}
             >
                 <FaHeart
                     className={`
@@ -69,7 +85,7 @@ const FavoriteButton = ({
             {/* Tooltip */}
             {showTooltip && (
                 <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-gray-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-10">
-                    {isFavorited ? 'Hapus dari favorit' : 'Tambah ke favorit'}
+                    {currentlyFavorited ? 'Hapus dari favorit' : 'Tambah ke favorit'}
                 </div>
             )}
         </div>

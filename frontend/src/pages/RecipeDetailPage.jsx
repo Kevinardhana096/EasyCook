@@ -21,9 +21,12 @@ import {
   FaRedo, // Add refresh icon
 } from "react-icons/fa";
 import { useAuth } from "../contexts/AuthContext";
+import { useFavorites } from "../contexts/FavoritesContext";
+import { useRatings } from "../contexts/RatingsContext";
 import LoadingSpinner from "../components/common/LoadingSpinner";
 import RatingStars from "../components/common/RatingStars";
 import RatingModal from "../components/recipe/RatingModal";
+import FavoriteButton from "../components/recipe/FavoriteButton";
 import apiClient from "../api/client";
 import {
   canEditRecipe,
@@ -37,15 +40,19 @@ const RecipeDetailPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { user, isAuthenticated } = useAuth();
+  const { isFavorited } = useFavorites();
+  const {
+    submitRating,
+    getUserRating,
+    getRecipeStats,
+    updateRecipeStats
+  } = useRatings();
 
   const [recipe, setRecipe] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [errorType, setErrorType] = useState(null); // 'notFound', 'network', 'unauthorized', 'server'
   const [isBookmarked, setIsBookmarked] = useState(false);
-  const [isFavorited, setIsFavorited] = useState(false);
-  const [userRating, setUserRating] = useState(0);
-  const [userReview, setUserReview] = useState("");
   const [activeTab, setActiveTab] = useState("instructions");
   const [actionLoading, setActionLoading] = useState(false);
   const [showRatingModal, setShowRatingModal] = useState(false);
@@ -74,15 +81,15 @@ const RecipeDetailPage = () => {
 
     try {
       const response = await apiClient.get(`/recipes/${id}`);
-      setRecipe(response.data.recipe);
+      const recipeData = response.data.recipe;
+      setRecipe(recipeData);
 
-      // Check if bookmarked/favorited (if user is logged in)
-      if (isAuthenticated) {
-        // TODO: Implement bookmark and favorite check API calls
-        setIsBookmarked(false);
-        setIsFavorited(false);
-        setUserRating(0);
-      }
+      // Update recipe stats in ratings context
+      updateRecipeStats(parseInt(id), {
+        average_rating: recipeData.average_rating || 0,
+        rating_count: recipeData.rating_count || 0
+      });
+
     } catch (err) {
       console.error("Recipe load error:", err);
 
@@ -151,8 +158,7 @@ const RecipeDetailPage = () => {
       }));
 
       alert(
-        `Recipe ${
-          recipe.is_featured ? "removed from" : "added to"
+        `Recipe ${recipe.is_featured ? "removed from" : "added to"
         } featured list!`
       );
     } catch (err) {
@@ -185,24 +191,6 @@ const RecipeDetailPage = () => {
     }
   };
 
-  const handleFavorite = async () => {
-    if (!isAuthenticated) {
-      navigate("/login");
-      return;
-    }
-
-    setActionLoading(true);
-    try {
-      // TODO: Implement favorite API call
-      setIsFavorited(!isFavorited);
-      console.log("Favorite toggled");
-    } catch (err) {
-      console.error("Favorite error:", err);
-    } finally {
-      setActionLoading(false);
-    }
-  };
-
   const handleSubmitRating = async ({ rating, review }) => {
     if (!isAuthenticated) {
       navigate("/login");
@@ -211,19 +199,31 @@ const RecipeDetailPage = () => {
 
     setRatingLoading(true);
     try {
-      const response = await apiClient.post(`/recipes/${id}/ratings`, {
-        rating,
-        review,
-      });
+      const response = await submitRating(parseInt(id), rating, review);
 
-      setUserRating(rating);
-      setUserReview(review);
+      // Update local recipe state with new stats
+      if (response.recipe_stats) {
+        setRecipe(prev => ({
+          ...prev,
+          average_rating: response.recipe_stats.average_rating,
+          rating_count: response.recipe_stats.rating_count
+        }));
+      }
+
       setShowRatingModal(false);
 
-      // Reload recipe to get updated average rating
-      loadRecipe();
+      // Show success message
+      const message = review
+        ? "Rating and review submitted successfully!"
+        : "Rating submitted successfully!";
 
-      alert("Rating submitted successfully!");
+      // Create a toast notification
+      const notification = document.createElement("div");
+      notification.className = "fixed z-50 w-auto alert alert-success top-4 right-4";
+      notification.innerHTML = `<span>✅ ${message}</span>`;
+      document.body.appendChild(notification);
+      setTimeout(() => notification.remove(), 3000);
+
     } catch (err) {
       console.error("Rating error:", err);
       alert("Failed to submit rating. Please try again.");
@@ -240,11 +240,27 @@ const RecipeDetailPage = () => {
 
     setActionLoading(true);
     try {
-      // TODO: Implement rating API call
-      setUserRating(rating);
-      console.log("Rating submitted:", rating);
+      const response = await submitRating(parseInt(id), rating, '');
+
+      // Update local recipe state with new stats
+      if (response.recipe_stats) {
+        setRecipe(prev => ({
+          ...prev,
+          average_rating: response.recipe_stats.average_rating,
+          rating_count: response.recipe_stats.rating_count
+        }));
+      }
+
+      // Show success notification
+      const notification = document.createElement("div");
+      notification.className = "fixed z-50 w-auto alert alert-success top-4 right-4";
+      notification.innerHTML = `<span>⭐ Rated ${rating} stars!</span>`;
+      document.body.appendChild(notification);
+      setTimeout(() => notification.remove(), 2000);
+
     } catch (err) {
       console.error("Rating error:", err);
+      alert("Failed to submit rating. Please try again.");
     } finally {
       setActionLoading(false);
     }
@@ -378,11 +394,10 @@ const RecipeDetailPage = () => {
                   <Link
                     key={index}
                     to={suggestion.link}
-                    className={`btn w-full ${
-                      suggestion.primary
+                    className={`btn w-full ${suggestion.primary
                         ? "btn-primary bg-orange-600 hover:bg-orange-700 text-white border-0"
                         : "btn-outline btn-primary text-orange-600 border-orange-600 hover:bg-orange-600 hover:text-white"
-                    }`}
+                      }`}
                   >
                     {suggestion.text}
                   </Link>
@@ -393,11 +408,10 @@ const RecipeDetailPage = () => {
                     key={index}
                     onClick={suggestion.action}
                     disabled={loading}
-                    className={`btn w-full ${
-                      suggestion.primary
+                    className={`btn w-full ${suggestion.primary
                         ? "btn-primary bg-orange-600 hover:bg-orange-700 text-white border-0"
                         : "btn-outline btn-primary text-orange-600 border-orange-600 hover:bg-orange-600 hover:text-white"
-                    } ${loading ? "loading" : ""}`}
+                      } ${loading ? "loading" : ""}`}
                   >
                     {loading ? "Loading..." : suggestion.text}
                   </button>
@@ -462,11 +476,10 @@ const RecipeDetailPage = () => {
               <button
                 onClick={handleToggleFeatured}
                 disabled={actionLoading}
-                className={`btn btn-circle shadow-md hover:shadow-lg border-0 ${
-                  recipe?.is_featured
+                className={`btn btn-circle shadow-md hover:shadow-lg border-0 ${recipe?.is_featured
                     ? "bg-yellow-200 text-yellow-800 hover:bg-yellow-300"
                     : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                }`}
+                  }`}
                 title={
                   recipe?.is_featured
                     ? "Remove from Featured"
@@ -479,20 +492,11 @@ const RecipeDetailPage = () => {
 
             {/* User action buttons */}
             {isAuthenticated && (
-              <button
-                onClick={handleFavorite}
-                disabled={actionLoading}
-                className={`btn btn-circle shadow-md hover:shadow-lg border-0 ${
-                  isFavorited
-                    ? "bg-red-500 text-white hover:bg-red-600"
-                    : "bg-orange-100 text-red-500 hover:bg-red-100 hover:text-red-600"
-                }`}
-                title={
-                  isFavorited ? "Remove from Favorites" : "Add to Favorites"
-                }
-              >
-                <FaHeart className="text-lg" />
-              </button>
+              <FavoriteButton
+                recipeId={parseInt(id)}
+                size="md"
+                className="btn btn-circle shadow-md hover:shadow-lg border-0"
+              />
             )}
 
             <button
@@ -538,15 +542,13 @@ const RecipeDetailPage = () => {
                         key={star}
                         onClick={() => handleRating(star)}
                         disabled={actionLoading}
-                        className={`text-2xl transition-all duration-200 hover:scale-110 ${
-                          star <= userRating
+                        className={`text-2xl transition-all duration-200 hover:scale-110 ${star <= getUserRating(parseInt(id)).rating
                             ? "text-yellow-400 drop-shadow-sm"
                             : "text-gray-300 hover:text-yellow-300"
-                        } ${
-                          actionLoading
+                          } ${actionLoading
                             ? "opacity-50 cursor-not-allowed"
                             : "cursor-pointer"
-                        }`}
+                          }`}
                         title={`Rate ${star} star${star > 1 ? "s" : ""}`}
                       >
                         <FaStar />
@@ -555,17 +557,24 @@ const RecipeDetailPage = () => {
                   </div>
 
                   <div className="flex items-center gap-4">
-                    {userRating > 0 && (
+                    {getUserRating(parseInt(id)).rating > 0 && (
                       <span className="px-3 py-1 text-sm text-gray-600 rounded-full bg-gray-50">
-                        You rated: {userRating}/5 ⭐
+                        You rated: {getUserRating(parseInt(id)).rating}/5 ⭐
                       </span>
                     )}
 
-                    {userRating === 0 && (
+                    {getUserRating(parseInt(id)).rating === 0 && (
                       <span className="text-xs italic text-gray-400">
                         Click a star to rate this recipe
                       </span>
                     )}
+
+                    <button
+                      onClick={() => setShowRatingModal(true)}
+                      className="px-3 py-1 text-xs text-orange-600 border border-orange-300 rounded-full hover:bg-orange-50"
+                    >
+                      {getUserRating(parseInt(id)).rating > 0 ? "Edit Review" : "Add Review"}
+                    </button>
                   </div>
                 </div>
 
@@ -620,13 +629,12 @@ const RecipeDetailPage = () => {
               {/* Tags */}
               <div className="flex flex-wrap items-center gap-3 font-brand">
                 <span
-                  className={`px-4 py-2 rounded-full text-sm font-medium ${
-                    recipe.difficulty === "Easy"
+                  className={`px-4 py-2 rounded-full text-sm font-medium ${recipe.difficulty === "Easy"
                       ? "bg-green-100 text-green-700"
                       : recipe.difficulty === "Medium"
-                      ? "bg-yellow-100 text-yellow-700"
-                      : "bg-red-100 text-red-700"
-                  }`}
+                        ? "bg-yellow-100 text-yellow-700"
+                        : "bg-red-100 text-red-700"
+                    }`}
                 >
                   {recipe.difficulty || "Medium"}
                 </span>
@@ -712,14 +720,14 @@ const RecipeDetailPage = () => {
                     </p>
                     <div className="flex flex-wrap items-center gap-2">
                       <RatingStars
-                        rating={recipe.average_rating || 0}
+                        rating={getRecipeStats(parseInt(id))?.average_rating || recipe.average_rating || 0}
                         size="sm"
                         interactive={false}
                         showText={true}
                       />
-                      {recipe.rating_count > 0 && (
+                      {(getRecipeStats(parseInt(id))?.rating_count || recipe.rating_count || 0) > 0 && (
                         <span className="text-xs text-gray-500 whitespace-nowrap">
-                          ({recipe.rating_count} reviews)
+                          ({getRecipeStats(parseInt(id))?.rating_count || recipe.rating_count} reviews)
                         </span>
                       )}
                     </div>
@@ -750,41 +758,41 @@ const RecipeDetailPage = () => {
               {(recipe.prep_time ||
                 recipe.cook_time ||
                 recipe.calories_per_serving) && (
-                <div className="pt-4 mt-4 border-t border-gray-100">
-                  <div className="grid grid-cols-3 gap-4 text-center">
-                    {recipe.prep_time && (
-                      <div>
-                        <p className="text-xs tracking-wide text-gray-500 uppercase">
-                          Prep Time
-                        </p>
-                        <p className="font-semibold text-gray-700">
-                          {recipe.prep_time}m
-                        </p>
-                      </div>
-                    )}
-                    {recipe.cook_time && (
-                      <div>
-                        <p className="text-xs tracking-wide text-gray-500 uppercase">
-                          Cook Time
-                        </p>
-                        <p className="font-semibold text-gray-700">
-                          {recipe.cook_time}m
-                        </p>
-                      </div>
-                    )}
-                    {recipe.calories_per_serving && (
-                      <div>
-                        <p className="text-xs tracking-wide text-gray-500 uppercase">
-                          Calories
-                        </p>
-                        <p className="font-semibold text-gray-700">
-                          {recipe.calories_per_serving} kcal
-                        </p>
-                      </div>
-                    )}
+                  <div className="pt-4 mt-4 border-t border-gray-100">
+                    <div className="grid grid-cols-3 gap-4 text-center">
+                      {recipe.prep_time && (
+                        <div>
+                          <p className="text-xs tracking-wide text-gray-500 uppercase">
+                            Prep Time
+                          </p>
+                          <p className="font-semibold text-gray-700">
+                            {recipe.prep_time}m
+                          </p>
+                        </div>
+                      )}
+                      {recipe.cook_time && (
+                        <div>
+                          <p className="text-xs tracking-wide text-gray-500 uppercase">
+                            Cook Time
+                          </p>
+                          <p className="font-semibold text-gray-700">
+                            {recipe.cook_time}m
+                          </p>
+                        </div>
+                      )}
+                      {recipe.calories_per_serving && (
+                        <div>
+                          <p className="text-xs tracking-wide text-gray-500 uppercase">
+                            Calories
+                          </p>
+                          <p className="font-semibold text-gray-700">
+                            {recipe.calories_per_serving} kcal
+                          </p>
+                        </div>
+                      )}
+                    </div>
                   </div>
-                </div>
-              )}
+                )}
             </div>
 
             {/* Login Prompt for Rating - Non-authenticated users */}
@@ -822,31 +830,28 @@ const RecipeDetailPage = () => {
       <div className="max-w-4xl mx-auto mt-10">
         <div className="justify-center mb-6 space-x-2 bg-orange-900 tabs tabs-boxed">
           <button
-            className={`tab rounded-xl font-brand font-medium ${
-              activeTab === "instructions"
+            className={`tab rounded-xl font-brand font-medium ${activeTab === "instructions"
                 ? "bg-orange-50 text-orange-800"
                 : "text-orange-50 hover:bg-orange-50 hover:text-orange-800"
-            }`}
+              }`}
             onClick={() => setActiveTab("instructions")}
           >
             Instructions
           </button>
           <button
-            className={`tab rounded-none font-brand font-medium ${
-              activeTab === "ingredients"
+            className={`tab rounded-none font-brand font-medium ${activeTab === "ingredients"
                 ? "bg-orange-50 text-orange-800"
                 : "text-orange-50 hover:bg-orange-50 hover:text-orange-800"
-            }`}
+              }`}
             onClick={() => setActiveTab("ingredients")}
           >
             Ingredients
           </button>
           <button
-            className={`tab rounded-none font-brand font-medium ${
-              activeTab === "nutrition"
+            className={`tab rounded-none font-brand font-medium ${activeTab === "nutrition"
                 ? "bg-orange-50 text-orange-800"
                 : "text-orange-50 hover:bg-orange-50 hover:text-orange-800"
-            }`}
+              }`}
             onClick={() => setActiveTab("nutrition")}
           >
             Nutrition
@@ -1071,8 +1076,8 @@ const RecipeDetailPage = () => {
         isOpen={showRatingModal}
         onClose={() => setShowRatingModal(false)}
         onSubmit={handleSubmitRating}
-        currentRating={userRating}
-        currentReview={userReview}
+        currentRating={getUserRating(parseInt(id)).rating}
+        currentReview={getUserRating(parseInt(id)).review}
         isLoading={ratingLoading}
       />
     </div>

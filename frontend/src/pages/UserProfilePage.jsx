@@ -19,6 +19,7 @@ import {
   FaTimes,
 } from "react-icons/fa";
 import { useAuth } from "../contexts/AuthContext";
+import { useFavorites } from "../contexts/FavoritesContext";
 import {
   getRoleDisplayName,
   getRoleBadgeColor,
@@ -27,17 +28,21 @@ import {
 import LoadingSpinner from "../components/common/LoadingSpinner";
 import RecipeCard from "../components/recipe/RecipeCard";
 import apiClient from "../api/client";
+import { recipesAPI } from "../api/recipes";
 
 const UserProfilePage = () => {
   const { userId } = useParams();
   const navigate = useNavigate();
   const { user: currentUser, updateUser } = useAuth();
+  const { favoriteCount, loadFavorites } = useFavorites();
 
   // State management
   const [profileUser, setProfileUser] = useState(null);
   const [userRecipes, setUserRecipes] = useState([]);
+  const [userFavorites, setUserFavorites] = useState([]);
   const [loading, setLoading] = useState(true);
   const [recipesLoading, setRecipesLoading] = useState(false);
+  const [favoritesLoading, setFavoritesLoading] = useState(false);
   const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState("favorites"); // Default to favorites, will be updated based on user capabilities
   const [viewMode, setViewMode] = useState("grid");
@@ -146,6 +151,7 @@ const UserProfilePage = () => {
               views: recipe.view_count || 0,
               image: recipe.image_url,
               cookTime: recipe.cook_time,
+              isFavorited: recipe.is_favorited || false, // Add favorite status
             })
           );
 
@@ -205,6 +211,48 @@ const UserProfilePage = () => {
     isOwnProfile,
     refreshTrigger,
   ]);
+
+  // Load favorites when favorites tab is active
+  useEffect(() => {
+    if (activeTab === "favorites" && profileUser && isOwnProfile) {
+      console.log("Frontend: Loading user favorites...");
+      const loadUserFavorites = async () => {
+        setFavoritesLoading(true);
+
+        try {
+          const response = await recipesAPI.getFavorites();
+          console.log("Frontend: Raw favorites API response:", response.data);
+
+          // Transform favorites to add author field for RecipeCard compatibility
+          const transformedFavorites = (response.data.recipes || []).map(
+            (recipe) => ({
+              ...recipe,
+              author:
+                recipe.user?.username ||
+                recipe.user?.full_name ||
+                "Unknown Chef",
+              rating: recipe.average_rating || 0,
+              likes: recipe.like_count || 0,
+              views: recipe.view_count || 0,
+              image: recipe.image_url,
+              cookTime: recipe.cook_time,
+              isFavorited: true, // All recipes in favorites are favorited
+            })
+          );
+
+          console.log("Frontend: transformed favorites:", transformedFavorites);
+          setUserFavorites(transformedFavorites);
+        } catch (err) {
+          console.error("Failed to load user favorites:", err);
+          setUserFavorites([]);
+        } finally {
+          setFavoritesLoading(false);
+        }
+      };
+
+      loadUserFavorites();
+    }
+  }, [activeTab, profileUser, isOwnProfile, refreshTrigger]);
 
   // Set default tab based on user capabilities
   useEffect(() => {
@@ -330,6 +378,25 @@ const UserProfilePage = () => {
       // Force refresh by updating trigger
       setRefreshTrigger((prev) => prev + 1);
     }, 500);
+  };
+
+  // Handle favorite toggle from RecipeCard
+  const handleFavoriteToggle = (recipeId, newFavoritedState) => {
+    if (activeTab === "favorites") {
+      if (newFavoritedState) {
+        // Recipe was added to favorites - reload favorites to include it
+        setTimeout(() => {
+          setRefreshTrigger((prev) => prev + 1);
+        }, 100);
+      } else {
+        // Recipe was removed from favorites - remove it from the list immediately
+        setUserFavorites((prevFavorites) =>
+          prevFavorites.filter((recipe) => recipe.id !== recipeId)
+        );
+      }
+    }
+    // The global favorites context will handle updating the favorite status
+    // No need to manually update recipe states since FavoriteButton uses global state
   };
 
   return (
@@ -474,7 +541,7 @@ const UserProfilePage = () => {
               </div>
 
               {/* Stats Section */}
-              <div className="grid grid-cols-1 gap-6 pt-10 mt-10 border-t border-gray-200 lg:grid-cols-2">
+              <div className="grid grid-cols-1 gap-6 pt-10 mt-10 border-t border-gray-200 lg:grid-cols-3">
                 {canCreateRecipes(profileUser) && (
                   <>
                     {/* Recipe Count */}
@@ -507,6 +574,23 @@ const UserProfilePage = () => {
                       </div>
                     </div>
                   </>
+                )}
+
+                {/* Favorites Count - Always show for own profile */}
+                {isOwnProfile && (
+                  <div className="flex items-center p-5 bg-pink-50 rounded-xl shadow-sm hover:shadow-md transition">
+                    <div className="p-4 mr-4 text-white bg-pink-600 rounded-full text-2xl">
+                      <FaHeart />
+                    </div>
+                    <div>
+                      <div className="text-sm font-medium text-pink-700">
+                        Favorites
+                      </div>
+                      <div className="text-xl font-bold text-pink-800">
+                        {userFavorites.length}
+                      </div>
+                    </div>
+                  </div>
                 )}
               </div>
             </div>
@@ -613,8 +697,8 @@ const UserProfilePage = () => {
                           const cuisines = e.target.checked
                             ? [...editForm.favorite_cuisines, cuisine]
                             : editForm.favorite_cuisines.filter(
-                                (c) => c !== cuisine
-                              );
+                              (c) => c !== cuisine
+                            );
                           setEditForm({
                             ...editForm,
                             favorite_cuisines: cuisines,
@@ -646,8 +730,8 @@ const UserProfilePage = () => {
                           const diets = e.target.checked
                             ? [...editForm.dietary_preferences, diet]
                             : editForm.dietary_preferences.filter(
-                                (d) => d !== diet
-                              );
+                              (d) => d !== diet
+                            );
                           setEditForm({
                             ...editForm,
                             dietary_preferences: diets,
@@ -689,11 +773,10 @@ const UserProfilePage = () => {
           <div className="p-3 mb-8 bg-orange-950 rounded-xl flex gap-2">
             {(canCreateRecipes(profileUser) || userRecipes.length > 0) && (
               <button
-                className={`tab px-4 rounded-md transition-all duration-200 flex items-center gap-2 ${
-                  activeTab === "recipes"
+                className={`tab px-4 rounded-md transition-all duration-200 flex items-center gap-2 ${activeTab === "recipes"
                     ? "bg-orange-50 text-orange-800 shadow"
                     : "text-orange-50 hover:bg-orange-50 hover:text-orange-800"
-                }`}
+                  }`}
                 onClick={() => setActiveTab("recipes")}
               >
                 <FaBookOpen />
@@ -702,23 +785,21 @@ const UserProfilePage = () => {
             )}
 
             <button
-              className={`tab px-4 rounded-md transition-all duration-200 flex items-center gap-2 ${
-                activeTab === "favorites"
+              className={`tab px-4 rounded-md transition-all duration-200 flex items-center gap-2 ${activeTab === "favorites"
                   ? "bg-orange-50 text-orange-800 shadow"
                   : "text-orange-50 hover:bg-orange-50 hover:text-orange-800"
-              }`}
+                }`}
               onClick={() => setActiveTab("favorites")}
             >
               <FaHeart />
-              <span>Favorites</span>
+              <span>Favorites {isOwnProfile && favoriteCount > 0 ? `(${favoriteCount})` : ''}</span>
             </button>
 
             <button
-              className={`tab px-4 rounded-md transition-all duration-200 flex items-center gap-2 ${
-                activeTab === "about"
+              className={`tab px-4 rounded-md transition-all duration-200 flex items-center gap-2 ${activeTab === "about"
                   ? "bg-orange-50 text-orange-800 shadow"
                   : "text-orange-50 hover:bg-orange-50 hover:text-orange-800"
-              }`}
+                }`}
               onClick={() => setActiveTab("about")}
             >
               <FaUser />
@@ -745,31 +826,28 @@ const UserProfilePage = () => {
                       </span>
                       <div className="flex gap-1 rounded-md overflow-hidden bg-white shadow-inner border border-orange-200">
                         <button
-                          className={`px-3 py-1 text-sm font-medium transition ${
-                            recipeStatus === "all"
+                          className={`px-3 py-1 text-sm font-medium transition ${recipeStatus === "all"
                               ? "bg-orange-800 text-white"
                               : "text-orange-700 hover:bg-orange-100"
-                          }`}
+                            }`}
                           onClick={() => handleRecipeStatusChange("all")}
                         >
                           All ({recipeCounts.total})
                         </button>
                         <button
-                          className={`px-3 py-1 text-sm font-medium transition ${
-                            recipeStatus === "published"
+                          className={`px-3 py-1 text-sm font-medium transition ${recipeStatus === "published"
                               ? "bg-green-600 text-white"
                               : "text-green-700 hover:bg-green-50"
-                          }`}
+                            }`}
                           onClick={() => handleRecipeStatusChange("published")}
                         >
                           Published ({recipeCounts.published})
                         </button>
                         <button
-                          className={`px-3 py-1 text-sm font-medium transition ${
-                            recipeStatus === "draft"
+                          className={`px-3 py-1 text-sm font-medium transition ${recipeStatus === "draft"
                               ? "bg-yellow-400 text-white"
                               : "text-yellow-700 hover:bg-yellow-100"
-                          }`}
+                            }`}
                           onClick={() => handleRecipeStatusChange("draft")}
                         >
                           Drafts ({recipeCounts.draft})
@@ -781,22 +859,20 @@ const UserProfilePage = () => {
                   {/* View Mode Toggle */}
                   <div className="flex items-center gap-1 rounded-md bg-white shadow-inner border border-orange-200">
                     <button
-                      className={`px-3 py-1 text-sm transition ${
-                        viewMode === "grid"
+                      className={`px-3 py-1 text-sm transition ${viewMode === "grid"
                           ? "bg-orange-800 text-white"
                           : "text-orange-700 hover:bg-orange-100"
-                      }`}
+                        }`}
                       onClick={() => setViewMode("grid")}
                       title="Grid View"
                     >
                       <FaTh />
                     </button>
                     <button
-                      className={`px-3 py-1 text-sm transition ${
-                        viewMode === "list"
+                      className={`px-3 py-1 text-sm transition ${viewMode === "list"
                           ? "bg-orange-800 text-white"
                           : "text-orange-700 hover:bg-orange-100"
-                      }`}
+                        }`}
                       onClick={() => setViewMode("list")}
                       title="List View"
                     >
@@ -833,11 +909,10 @@ const UserProfilePage = () => {
                     userRecipes.length
                   )}
                   <div
-                    className={`grid gap-6 ${
-                      viewMode === "grid"
+                    className={`grid gap-6 ${viewMode === "grid"
                         ? "grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
                         : "grid-cols-1"
-                    }`}
+                      }`}
                   >
                     {userRecipes.map((recipe) => (
                       <RecipeCard
@@ -846,6 +921,7 @@ const UserProfilePage = () => {
                         showAuthor={!isOwnProfile}
                         showOwnerActions={isOwnProfile}
                         onStatusChange={handleRecipeToggle}
+                        onFavoriteToggle={handleFavoriteToggle}
                         className={
                           viewMode === "list" ? "recipe-card-list" : ""
                         }
@@ -870,9 +946,8 @@ const UserProfilePage = () => {
                           return (
                             <button
                               key={page}
-                              className={`btn ${
-                                page === currentPage ? "btn-active" : ""
-                              }`}
+                              className={`btn ${page === currentPage ? "btn-active" : ""
+                                }`}
                               onClick={() => setCurrentPage(page)}
                             >
                               {page}
@@ -915,18 +990,86 @@ const UserProfilePage = () => {
 
           {/* Favorites Tab */}
           {activeTab === "favorites" && (
-            <div className="py-20 text-center">
-              <h3 className="mb-2 text-4xl font-semibold text-orange-800">
-                Favorite Recipes
-              </h3>
-              <p className="mb-6 text-orange-700">
-                {isOwnProfile
-                  ? "Your favorite recipes will appear here"
-                  : `${profileUser.username}'s favorite recipes`}
-              </p>
-              <div className="inline-flex items-center px-3 py-1.5 rounded-full text-sm font-medium bg-yellow-100 text-yellow-800 border border-yellow-300 shadow-sm">
-                Coming Soon
+            <div>
+              <div className="flex flex-col gap-4 mb-6 sm:flex-row sm:items-center sm:justify-between">
+                <h2 className="text-2xl font-medium text-orange-800">
+                  {isOwnProfile
+                    ? "My Favorite Recipes"
+                    : `${profileUser.username}'s Favorite Recipes`}
+                </h2>
+
+                {isOwnProfile && userFavorites.length > 0 && (
+                  <div className="flex items-center gap-4 p-4 bg-white rounded-xl shadow-sm">
+                    {/* View Mode Toggle */}
+                    <div className="flex items-center gap-1 rounded-md bg-white shadow-inner border border-orange-200">
+                      <button
+                        className={`px-3 py-1 text-sm transition ${viewMode === "grid"
+                            ? "bg-orange-800 text-white"
+                            : "text-orange-700 hover:bg-orange-100"
+                          }`}
+                        onClick={() => setViewMode("grid")}
+                        title="Grid View"
+                      >
+                        <FaTh />
+                      </button>
+                      <button
+                        className={`px-3 py-1 text-sm transition ${viewMode === "list"
+                            ? "bg-orange-800 text-white"
+                            : "text-orange-700 hover:bg-orange-100"
+                          }`}
+                        onClick={() => setViewMode("list")}
+                        title="List View"
+                      >
+                        <FaList />
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
+
+              {/* Favorites Grid/List */}
+              {favoritesLoading ? (
+                <div className="flex justify-center py-20 bg-orange-50">
+                  <LoadingSpinner size="lg" text="Loading favorites..." />
+                </div>
+              ) : userFavorites.length > 0 ? (
+                <div
+                  className={`grid gap-6 ${viewMode === "grid"
+                      ? "grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
+                      : "grid-cols-1"
+                    }`}
+                >
+                  {userFavorites.map((recipe) => (
+                    <RecipeCard
+                      key={recipe.id}
+                      recipe={recipe}
+                      showAuthor={true}
+                      onFavoriteToggle={handleFavoriteToggle}
+                      className={
+                        viewMode === "list" ? "recipe-card-list" : ""
+                      }
+                    />
+                  ))}
+                </div>
+              ) : (
+                <div className="py-20 text-center">
+                  <div className="mb-4 text-6xl">💖</div>
+                  <h3 className="mb-2 text-2xl font-bold text-orange-800">
+                    {isOwnProfile ? "No favorite recipes yet" : "No favorites shared"}
+                  </h3>
+                  <p className="mb-6 text-orange-700">
+                    {isOwnProfile
+                      ? "Start favoriting recipes you love by clicking the heart icon!"
+                      : `${profileUser.username} hasn't shared their favorite recipes yet.`}
+                  </p>
+                  {isOwnProfile && (
+                    <Link to="/recipes" className="btn bg-orange-800 text-white hover:bg-orange-900">
+                      <FaHeart className="mr-2" />
+                      Discover Recipes
+                    </Link>
+                  )}
+                </div>
+              )}
             </div>
           )}
 
@@ -982,7 +1125,7 @@ const UserProfilePage = () => {
                 {/* Activity Stats */}
                 <div className="bg-white border border-gray-100 rounded-2xl shadow-md p-6">
                   <h3 className="mb-4 text-2xl font-semibold text-orange-800">
-                    Activity Overview 
+                    Activity Overview
                   </h3>
 
                   <div className="space-y-6 text-sm text-gray-700">
@@ -1032,12 +1175,12 @@ const UserProfilePage = () => {
                         <p className="text-base font-semibold">
                           {userRecipes.length > 0
                             ? (
-                                userRecipes.reduce(
-                                  (total, recipe) =>
-                                    total + (recipe.rating || 0),
-                                  0
-                                ) / userRecipes.length
-                              ).toFixed(1)
+                              userRecipes.reduce(
+                                (total, recipe) =>
+                                  total + (recipe.rating || 0),
+                                0
+                              ) / userRecipes.length
+                            ).toFixed(1)
                             : "0.0"}{" "}
                         </p>
                       </div>

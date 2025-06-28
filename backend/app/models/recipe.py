@@ -41,7 +41,7 @@ class Recipe(db.Model):
         """Get number of ratings for this recipe"""
         return self.ratings.count()
     
-    def to_dict(self, include_details=True):
+    def to_dict(self, include_details=True, current_user_id=None):
         data = {
             'id': self.id,
             'title': self.title,
@@ -64,6 +64,17 @@ class Recipe(db.Model):
             'created_at': self.created_at.isoformat() if self.created_at else None,
             'updated_at': self.updated_at.isoformat() if self.updated_at else None
         }
+        
+        # Check if current user has favorited this recipe
+        if current_user_id:
+            from .rating import Rating
+            user_rating = Rating.query.filter_by(
+                user_id=current_user_id, 
+                recipe_id=self.id
+            ).first()
+            data['is_favorited'] = user_rating and user_rating.rating >= 4
+        else:
+            data['is_favorited'] = False
         
         if include_details:
             data['instructions'] = self.instructions

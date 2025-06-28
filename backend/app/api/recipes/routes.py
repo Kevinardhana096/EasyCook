@@ -122,9 +122,16 @@ def get_recipes():
             page=page, per_page=per_page, error_out=False
         )
         
+        # Get current user ID if authenticated
+        current_user_id = None
+        try:
+            current_user_id = int(get_jwt_identity()) if get_jwt_identity() else None
+        except:
+            pass
+        
         return jsonify({
             'message': 'Recipes retrieved successfully',
-            'recipes': [recipe.to_dict(include_details=False) for recipe in recipes.items],
+            'recipes': [recipe.to_dict(include_details=False, current_user_id=current_user_id) for recipe in recipes.items],
             'pagination': {
                 'page': page,
                 'per_page': per_page,
@@ -155,9 +162,16 @@ def get_recipe(recipe_id):
         recipe.view_count = (recipe.view_count or 0) + 1
         db.session.commit()
         
+        # Get current user ID if authenticated
+        current_user_id = None
+        try:
+            current_user_id = int(get_jwt_identity()) if get_jwt_identity() else None
+        except:
+            pass
+        
         return jsonify({
             'message': 'Recipe retrieved successfully',
-            'recipe': recipe.to_dict(include_details=True)
+            'recipe': recipe.to_dict(include_details=True, current_user_id=current_user_id)
         }), 200
         
     except Exception as e:
@@ -325,9 +339,17 @@ def rate_recipe(recipe_id):
             
             db.session.commit()
             
+            # Get updated recipe stats
+            average_rating = Rating.get_average_rating(recipe_id)
+            rating_count = Rating.query.filter_by(recipe_id=recipe_id).count()
+            
             return jsonify({
                 'message': 'Rating updated successfully',
-                'rating': existing_rating.to_dict()
+                'rating': existing_rating.to_dict(),
+                'recipe_stats': {
+                    'average_rating': average_rating,
+                    'rating_count': rating_count
+                }
             }), 200
         else:
             # Create new rating
@@ -342,10 +364,18 @@ def rate_recipe(recipe_id):
             db.session.add(rating)
             db.session.commit()
             
+            # Get updated recipe stats
+            average_rating = Rating.get_average_rating(recipe_id)
+            rating_count = Rating.query.filter_by(recipe_id=recipe_id).count()
+            
             return jsonify({
                 'message': 'Rating added successfully',
-                'rating': rating.to_dict()
-            }, 201)
+                'rating': rating.to_dict(),
+                'recipe_stats': {
+                    'average_rating': average_rating,
+                    'rating_count': rating_count
+                }
+            }), 201
         
     except Exception as e:
         db.session.rollback()
@@ -358,9 +388,16 @@ def get_user_recipes(user_id):
         user = User.query.get_or_404(user_id)
         recipes = Recipe.query.filter_by(user_id=user_id, is_published=True).order_by(Recipe.created_at.desc()).all()
         
+        # Get current user ID if authenticated
+        current_user_id = None
+        try:
+            current_user_id = int(get_jwt_identity()) if get_jwt_identity() else None
+        except:
+            pass
+        
         return jsonify({
             'message': 'User recipes retrieved successfully',
-            'recipes': [recipe.to_dict(include_details=False) for recipe in recipes],
+            'recipes': [recipe.to_dict(include_details=False, current_user_id=current_user_id) for recipe in recipes],
             'user': user.to_dict(),
             'total': len(recipes)
         }), 200
@@ -461,7 +498,7 @@ def get_user_favorites():
         
         return jsonify({
             'message': 'Favorite recipes retrieved successfully',
-            'recipes': [recipe.to_dict(include_details=False) for recipe in favorites],
+            'recipes': [recipe.to_dict(include_details=False, current_user_id=user_id) for recipe in favorites],
             'total': len(favorites)
         }), 200
         

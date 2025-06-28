@@ -13,6 +13,8 @@ import FavoriteButton from "./FavoriteButton";
 import PlaceholderImage from "../common/PlaceholderImage";
 import RatingStars from "../common/RatingStars";
 import { useAuth } from "../../contexts/AuthContext";
+import { useFavorites } from "../../contexts/FavoritesContext";
+import { useRatings } from "../../contexts/RatingsContext";
 import apiClient from "../../api/client";
 
 const RecipeCard = ({
@@ -21,10 +23,13 @@ const RecipeCard = ({
   className = "",
   showOwnerActions = false,
   onStatusChange,
+  onFavoriteToggle,
 }) => {
   const [imageError, setImageError] = useState(false);
   const [isToggling, setIsToggling] = useState(false);
   const { user } = useAuth();
+  const { isFavorited } = useFavorites();
+  const { getRecipeStats } = useRatings();
 
   const {
     id,
@@ -33,18 +38,25 @@ const RecipeCard = ({
     image,
     image_url,
     rating = 0,
+    average_rating = 0,
+    rating_count = 0,
     cookTime,
     difficulty = "Medium",
     author,
     likes = 0,
     views = 0,
-    isFavorited = false,
     is_published = true, // Default to true for backward compatibility
     user_id,
   } = recipe;
 
   const imageSource = image || image_url;
   const isOwner = user && user.id === user_id;
+  const currentlyFavorited = isFavorited(id);
+
+  // Get updated rating stats from context or use recipe data
+  const ratingStats = getRecipeStats(id);
+  const displayRating = ratingStats?.average_rating ?? average_rating ?? rating ?? 0;
+  const displayRatingCount = ratingStats?.rating_count ?? rating_count ?? 0;
 
   const getDifficultyColor = (difficulty) => {
     switch (difficulty.toLowerCase()) {
@@ -111,7 +123,6 @@ const RecipeCard = ({
         <div className="absolute top-4 right-4">
           <FavoriteButton
             recipeId={id}
-            initialFavorited={isFavorited}
             size="md"
             onToggle={(recipeId, newFavoritedState) => {
               console.log(
@@ -119,7 +130,10 @@ const RecipeCard = ({
                 recipeId,
                 newFavoritedState
               );
-              // TODO: Update parent state or call API
+              // Call parent component's favorite toggle handler
+              if (onFavoriteToggle) {
+                onFavoriteToggle(recipeId, newFavoritedState);
+              }
             }}
           />
         </div>
@@ -159,11 +173,16 @@ const RecipeCard = ({
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-4">
             <RatingStars
-              rating={rating}
+              rating={displayRating}
               size="sm"
               interactive={false}
-              showText={rating > 0}
+              showText={displayRating > 0}
             />
+            {displayRatingCount > 0 && (
+              <span className="text-xs text-gray-500">
+                ({displayRatingCount} reviews)
+              </span>
+            )}
 
             {showAuthor && author && (
               <div className="flex items-center text-gray-500">
@@ -207,9 +226,8 @@ const RecipeCard = ({
                 <button
                   onClick={handleTogglePublish}
                   disabled={isToggling}
-                  className={`btn btn-xs ${
-                    is_published ? "btn-warning" : "btn-success"
-                  }`}
+                  className={`btn btn-xs ${is_published ? "btn-warning" : "btn-success"
+                    }`}
                   title={is_published ? "Unpublish recipe" : "Publish recipe"}
                 >
                   {isToggling ? (
