@@ -12,23 +12,23 @@ auth_bp = Blueprint('auth', __name__)
 def register():
     try:
         data = request.get_json()
-        print(f"📝 Registration attempt with data: {data}")
-        
+        print(f"Registration attempt with data: {data}")
+
         if not data or not data.get('username') or not data.get('email') or not data.get('password'):
             return jsonify({'message': 'Username, email, and password are required'}), 400
         
         # Check if user exists
         existing_email = User.query.filter_by(email=data['email']).first()
         if existing_email:
-            print(f"❌ Email {data['email']} already exists")
+            print(f"Email {data['email']} already exists")
             return jsonify({'message': 'Email already registered'}), 400
         
         existing_username = User.query.filter_by(username=data['username']).first()
         if existing_username:
-            print(f"❌ Username {data['username']} already exists")
+            print(f"Username {data['username']} already exists")
             return jsonify({'message': 'Username already taken'}), 400
         
-        print(f"✅ Creating new user: {data['username']}")
+        print(f"Creating new user: {data['username']}")
         
         # Validate role (allow user or chef for public registration)
         role = data.get('role', 'user')
@@ -46,20 +46,20 @@ def register():
         )
         user.set_password(data['password'])
         
-        print(f"🔐 Password set for user {user.username}")
+        print(f"Password set for user {user.username}")
         
         db.session.add(user)
-        print(f"📝 User added to session")
-        
+        print(f"User added to session")
+
         db.session.commit()
-        print(f"✅ User committed to database with ID: {user.id}")
+        print(f"User committed to database with ID: {user.id}")
         
         # Verify user was saved
         saved_user = User.query.get(user.id)
         if saved_user:
-            print(f"✅ User verification successful: {saved_user.username}")
+            print(f"User verification successful: {saved_user.username}")
         else:
-            print(f"❌ User verification failed!")
+            print(f"User verification failed!")
         
         # Generate token
         access_token = create_access_token(identity=str(user.id))
@@ -72,8 +72,8 @@ def register():
         
     except Exception as e:
         db.session.rollback()
-        print(f"❌ Registration error: {str(e)}")
-        print(f"❌ Full traceback: {traceback.format_exc()}")
+        print(f"Registration error: {str(e)}")
+        print(f"Full traceback: {traceback.format_exc()}")
         return jsonify({'message': 'Registration failed', 'error': str(e)}), 500
 
 @auth_bp.route('/login', methods=['POST'])
@@ -96,13 +96,13 @@ def login():
         access_token = create_access_token(identity=str(user.id))
         
         return jsonify({
-            'message': f'Welcome back, {user.username}! 👋',
+            'message': f'Welcome back, {user.username}!',
             'access_token': access_token,
             'user': user.to_dict(include_private=True)
         }), 200
         
     except Exception as e:
-        print(f"❌ Login error: {str(e)}")
+        print(f"Login error: {str(e)}")
         return jsonify({'message': 'Login failed', 'error': str(e)}), 500
 
 @auth_bp.route('/forgot-password', methods=['POST'])
@@ -130,14 +130,14 @@ def forgot_password():
         user.set_password(data['new_password'])
         db.session.commit()
         
-        print(f"✅ Password reset successful for {user.email}")
+        print(f"Password reset successful for {user.email}")
         
         return jsonify({
             'message': 'Password has been reset successfully. You can now login with your new password.'
         }), 200
         
     except Exception as e:
-        print(f"❌ Password reset error: {str(e)}")
+        print(f"Password reset error: {str(e)}")
         return jsonify({'message': 'Failed to reset password', 'error': str(e)}), 500
 
 @auth_bp.route('/profile', methods=['GET'])
@@ -313,7 +313,7 @@ def register_admin():
     """Admin endpoint to register users with specific roles"""
     try:
         data = request.get_json()
-        print(f"📝 Admin registration attempt with data: {data}")
+        print(f"Admin registration attempt with data: {data}")
         
         if not data or not data.get('username') or not data.get('email') or not data.get('password'):
             return jsonify({'message': 'Username, email, and password are required'}), 400
@@ -442,7 +442,7 @@ def get_my_recipes():
         per_page = int(request.args.get('per_page', 12))
         status = request.args.get('status', 'all')  # all, published, draft
         
-        print(f"📝 get_my_recipes called by user {current_user_id}, status={status}, page={page}")
+        print(f"get_my_recipes called by user {current_user_id}, status={status}, page={page}")
         
         # Use joinedload to include user and category data
         recipes_query = Recipe.query.options(
@@ -467,8 +467,8 @@ def get_my_recipes():
             error_out=False
         )
         
-        print(f"📊 Found {paginated_recipes.total} total recipes for user {current_user_id}")
-        print(f"📄 Page {page}: {len(paginated_recipes.items)} recipes")
+        print(f"Found {paginated_recipes.total} total recipes for user {current_user_id}")
+        print(f"Page {page}: {len(paginated_recipes.items)} recipes")
         
         recipes_data = [recipe.to_dict(include_details=False, current_user_id=int(current_user_id) if current_user_id else None) for recipe in paginated_recipes.items]
         for recipe in recipes_data:
@@ -486,7 +486,7 @@ def get_my_recipes():
         }), 200
         
     except Exception as e:
-        print(f"❌ Error in get_my_recipes: {str(e)}")
+        print(f"Error in get_my_recipes: {str(e)}")
         return jsonify({'message': 'Failed to get user recipes', 'error': str(e)}), 500
 
 @auth_bp.route('/users/<int:user_id>/recipes', methods=['GET'])
