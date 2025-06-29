@@ -105,6 +105,41 @@ def login():
         print(f"❌ Login error: {str(e)}")
         return jsonify({'message': 'Login failed', 'error': str(e)}), 500
 
+@auth_bp.route('/forgot-password', methods=['POST'])
+def forgot_password():
+    """Reset password directly with email and new password"""
+    try:
+        data = request.get_json()
+        
+        if not data or not data.get('email') or not data.get('new_password'):
+            return jsonify({'message': 'Email and new password are required'}), 400
+        
+        user = User.query.filter_by(email=data['email']).first()
+        
+        if not user:
+            return jsonify({'message': 'Email not found'}), 404
+        
+        if not user.is_active:
+            return jsonify({'message': 'Account is deactivated'}), 401
+        
+        # Validate new password length
+        if len(data['new_password']) < 6:
+            return jsonify({'message': 'Password must be at least 6 characters'}), 400
+        
+        # Reset password directly
+        user.set_password(data['new_password'])
+        db.session.commit()
+        
+        print(f"✅ Password reset successful for {user.email}")
+        
+        return jsonify({
+            'message': 'Password has been reset successfully. You can now login with your new password.'
+        }), 200
+        
+    except Exception as e:
+        print(f"❌ Password reset error: {str(e)}")
+        return jsonify({'message': 'Failed to reset password', 'error': str(e)}), 500
+
 @auth_bp.route('/profile', methods=['GET'])
 @jwt_required()
 def get_profile():

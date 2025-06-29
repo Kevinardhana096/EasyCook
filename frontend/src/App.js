@@ -13,6 +13,7 @@ import EditRecipePage from './pages/EditRecipePage';
 import UserProfilePage from './pages/UserProfilePage';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
+import ForgotPasswordPage from './pages/ForgotPasswordPage';
 import CategoriesOverviewPage from './pages/CategoriesOverviewPage';
 import CategoryPage from './pages/CategoryPage';
 import FavoritePage from './pages/FavoritePage';
@@ -33,6 +34,7 @@ function App() {
                   <Route path="/" element={<HomePageWrapper />} />
                   <Route path="/login" element={<LoginPage />} />
                   <Route path="/register" element={<RegisterPage />} />
+                  <Route path="/forgot-password" element={<ForgotPasswordPage />} />
 
                   {/* Guest can access these but need login for interactions */}
                   <Route

@@ -24,3 +24,13 @@ export const logout = async () => {
   const response = await apiClient.post('/auth/logout');
   return response.data;
 };
+
+export const forgotPassword = async (email, newPassword) => {
+  const response = await apiClient.post('/auth/forgot-password', {
+    email,
+    new_password: newPassword
+  });
+  return response.data;
+};
+
+// Remove resetPassword function as it's no longer needed
