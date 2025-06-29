@@ -1,0 +1,65 @@
+@startuml CookEasyUseCaseDiagram
+
+!define RECTANGLE class
+left to right direction
+
+actor "Guest" as Guest
+actor "User" as User  
+actor "Chef" as Chef
+actor "Admin" as Admin
+
+package "Guest Features" {
+    usecase "Explore Our Highlights" as G1
+    usecase "Register/Login" as G2
+}
+
+package "User Features" {
+    usecase "Favorites" as U1
+    usecase "Rate" as U2
+    usecase "Profile Management" as U3
+    usecase "Share Recipes" as U4
+    usecase "Browse Recipes" as U5
+    usecase "Search" as U6
+}
+
+package "Chef Features" {
+    usecase "Create Recipes" as C1
+    usecase "Recipe Management" as C2
+    usecase "Analytics" as C3
+    usecase "Chef Dashboard" as C4
+}
+
+package "Admin Features" {
+    usecase "User Management" as A1
+    usecase "Content Moderation" as A2
+    usecase "System Settings" as A3
+    usecase "Admin Dashboard" as A4
+}
+
+' Actor to Use Case connections
+Guest --> G1
+Guest --> G2
+
+User --> U1
+User --> U2
+User --> U3
+User --> U4
+User --> U5
+User --> U6
+
+Chef --> C1
+Chef --> C2
+Chef --> C3
+Chef --> C4
+
+Admin --> A1
+Admin --> A2
+Admin --> A3
+Admin --> A4
+
+' Role inheritance
+Guest <|-- User
+User <|-- Chef
+Chef <|-- Admin
+
+@enduml

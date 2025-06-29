@@ -7,7 +7,7 @@ const RoleTestingPanel = () => {
     const [loading, setLoading] = useState(false);
 
     // Toggle to temporarily disable the panel
-    const PANEL_ENABLED = false; // Set to true to re-enable
+    const PANEL_ENABLED = true; // Set to true to re-enable
 
     const testLogin = async (role) => {
         try {
