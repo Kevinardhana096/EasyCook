@@ -58,7 +58,8 @@ const RecipeCard = ({
 
   // Get updated rating stats from context or use recipe data
   const ratingStats = getRecipeStats(id);
-  const displayRating = ratingStats?.average_rating ?? average_rating ?? rating ?? 0;
+  const displayRating =
+    ratingStats?.average_rating ?? average_rating ?? rating ?? 0;
   const displayRatingCount = ratingStats?.rating_count ?? rating_count ?? 0;
 
   const getDifficultyColor = (difficulty) => {
@@ -199,32 +200,38 @@ const RecipeCard = ({
         )}
 
         {/* Rating and author */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-4">
-            <RatingStars
-              rating={displayRating}
-              size="sm"
-              interactive={false}
-              showText={displayRating > 0}
-            />
-            {displayRatingCount > 0 && (
-              <span className="text-xs text-gray-500">
-                ({displayRatingCount} reviews)
-              </span>
-            )}
+        <div className="flex items-start justify-between">
+          {/* Left: Rating & Author */}
+          <div>
+            <div className="flex items-center space-x-4">
+              <RatingStars
+                rating={displayRating}
+                size="sm"
+                interactive={false}
+                showText={displayRating > 0}
+              />
+              {displayRatingCount > 0 && (
+                <span className="text-xs text-gray-500">
+                  ({displayRatingCount} reviews)
+                </span>
+              )}
+            </div>
 
+            {/* Author - Di bawah rating */}
             {showAuthor && author && (
-              <div className="flex items-center text-gray-500">
+              <div className="flex items-center text-gray-500 mt-1">
                 <FaUser className="mr-1 text-xs" />
                 <span className="text-sm">
-                  {typeof author === 'string' ? author : author.username || author.full_name || 'Unknown'}
+                  {typeof author === "string"
+                    ? author
+                    : author.username || author.full_name || "Unknown"}
                 </span>
               </div>
             )}
           </div>
 
-          {/* Stats */}
-          <div className="flex items-center space-x-3 text-gray-500 text-sm">
+          {/* Right: Likes */}
+          <div className="flex items-center space-x-3 text-gray-500 text-sm mt-1 md:mt-0">
             {likes > 0 && (
               <div className="flex items-center">
                 <FaHeart className="mr-1" />
@@ -257,8 +264,9 @@ const RecipeCard = ({
                 <button
                   onClick={handleTogglePublish}
                   disabled={isToggling}
-                  className={`btn btn-xs ${is_published ? "btn-warning" : "btn-success"
-                    }`}
+                  className={`btn btn-xs ${
+                    is_published ? "btn-warning" : "btn-success"
+                  }`}
                   title={is_published ? "Unpublish recipe" : "Publish recipe"}
                 >
                   {isToggling ? (
