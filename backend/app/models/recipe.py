@@ -22,6 +22,14 @@ class Recipe(db.Model):
     like_count = db.Column(db.Integer, default=0)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     category_id = db.Column(db.Integer, db.ForeignKey('categories.id'))  # Keep for backward compatibility
+    
+    # Nutrition fields
+    calories_per_serving = db.Column(db.Float)
+    protein = db.Column(db.Float)
+    carbs = db.Column(db.Float)
+    fat = db.Column(db.Float)
+    fiber = db.Column(db.Float)
+    
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
@@ -68,7 +76,13 @@ class Recipe(db.Model):
             'category_id': self.category_id,  # Keep for backward compatibility
             'categories': [{'id': cat.id, 'name': cat.name, 'slug': cat.slug, 'icon': cat.icon} for cat in self.categories],
             'created_at': self.created_at.isoformat() if self.created_at else None,
-            'updated_at': self.updated_at.isoformat() if self.updated_at else None
+            'updated_at': self.updated_at.isoformat() if self.updated_at else None,
+            # Add nutrition fields at recipe level for frontend compatibility
+            'calories_per_serving': self.calories_per_serving,
+            'protein': self.protein,
+            'carbs': self.carbs,
+            'fat': self.fat,
+            'fiber': self.fiber
         }
         
         # Check if current user has favorited this recipe
@@ -84,6 +98,21 @@ class Recipe(db.Model):
         
         if include_details:
             data['instructions'] = self.instructions
+            
+            # Include ingredients
+            ingredients = []
+            for recipe_ingredient in self.recipe_ingredients.order_by('order'):
+                ingredients.append(recipe_ingredient.to_dict())
+            data['ingredients'] = ingredients
+            
+            # Include nutrition data
+            data['nutrition'] = {
+                'calories_per_serving': self.calories_per_serving,
+                'protein': self.protein,
+                'carbs': self.carbs,
+                'fat': self.fat,
+                'fiber': self.fiber
+            }
         
         # Include user data if available
         if hasattr(self, 'user') and self.user:

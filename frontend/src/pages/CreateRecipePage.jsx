@@ -148,6 +148,8 @@ const CreateRecipePage = () => {
         category_id: parseInt(data.category_id) || null, // Keep for backward compatibility
         category_ids: data.category_ids || [], // New field for multiple categories
         is_published: true,
+        // Include ingredients data
+        ingredients: data.ingredients || [],
         // Include nutrition data if provided
         nutrition: {
           calories_per_serving:
@@ -334,8 +336,8 @@ const CreateRecipePage = () => {
                 <button
                   type="button"
                   className={`relative px-4 py-2 rounded-lg font-medium transition-all duration-200 ${activeTab === "basic"
-                      ? "bg-orange-50 text-orange-800"
-                      : "text-orange-50 hover:bg-orange-50 hover:text-orange-800"
+                    ? "bg-orange-50 text-orange-800"
+                    : "text-orange-50 hover:bg-orange-50 hover:text-orange-800"
                     }`}
                   onClick={() => setActiveTab("basic")}
                 >
@@ -349,8 +351,8 @@ const CreateRecipePage = () => {
                   type="button"
                   onClick={() => setActiveTab("ingredients")}
                   className={`relative px-4 py-2 rounded-lg font-medium transition-all duration-200 ${activeTab === "ingredients"
-                      ? "bg-orange-50 text-orange-800"
-                      : "text-orange-50 hover:bg-orange-50 hover:text-orange-800"
+                    ? "bg-orange-50 text-orange-800"
+                    : "text-orange-50 hover:bg-orange-50 hover:text-orange-800"
                     }`}
                 >
                   <span className="flex items-center gap-2">
@@ -365,8 +367,8 @@ const CreateRecipePage = () => {
                   type="button"
                   onClick={() => setActiveTab("instructions")}
                   className={`relative px-4 py-2 rounded-lg font-medium transition-all duration-200 ${activeTab === "instructions"
-                      ? "bg-orange-50 text-orange-800"
-                      : "text-orange-50 hover:bg-orange-50 hover:text-orange-800"
+                    ? "bg-orange-50 text-orange-800"
+                    : "text-orange-50 hover:bg-orange-50 hover:text-orange-800"
                     }`}
                 >
                   <span className="flex items-center gap-2">
@@ -381,8 +383,8 @@ const CreateRecipePage = () => {
                   type="button"
                   onClick={() => setActiveTab("nutrition")}
                   className={`relative px-4 py-2 rounded-lg font-medium transition-all duration-200 ${activeTab === "nutrition"
-                      ? "bg-orange-50 text-orange-800"
-                      : "text-orange-50 hover:bg-orange-50 hover:text-orange-800"
+                    ? "bg-orange-50 text-orange-800"
+                    : "text-orange-50 hover:bg-orange-50 hover:text-orange-800"
                     }`}
                 >
                   <span className="flex items-center gap-2">
@@ -693,8 +695,8 @@ const CreateRecipePage = () => {
                                 type="text"
                                 placeholder="e.g., Chicken breast, Onion, Garlic..."
                                 className={`recipe-input ${errors.ingredients?.[index]?.name
-                                    ? "border-red-400"
-                                    : ""
+                                  ? "border-red-400"
+                                  : ""
                                   }`}
                                 {...register(`ingredients.${index}.name`, {
                                   required: "Ingredient name is required",
@@ -718,8 +720,8 @@ const CreateRecipePage = () => {
                                 placeholder="250"
                                 step="0.1"
                                 className={`recipe-input ${errors.ingredients?.[index]?.quantity
-                                    ? "border-red-400"
-                                    : ""
+                                  ? "border-red-400"
+                                  : ""
                                   }`}
                                 {...register(`ingredients.${index}.quantity`, {
                                   required: "Quantity is required",

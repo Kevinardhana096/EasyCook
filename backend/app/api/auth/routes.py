@@ -30,13 +30,18 @@ def register():
         
         print(f"✅ Creating new user: {data['username']}")
         
+        # Validate role (allow user or chef for public registration)
+        role = data.get('role', 'user')
+        if role not in ['user', 'chef']:
+            return jsonify({'message': 'Invalid role. Must be user or chef'}), 400
+        
         # Create user
         user = User(
             username=data['username'],
             email=data['email'],
             full_name=data.get('full_name', data['username']),
             bio=data.get('bio', ''),
-            role='user',
+            role=role,
             is_active=True
         )
         user.set_password(data['password'])

@@ -1,9 +1,10 @@
 from flask import Blueprint, jsonify, request
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from app import db
-from app.models import Recipe, Category, Rating, User, Ingredient
+from app.models import Recipe, Category, Rating, User, Ingredient, RecipeIngredient
 from app.utils.decorators import chef_or_admin_required, admin_required
 from sqlalchemy import func, desc
+from sqlalchemy.orm import joinedload
 
 recipes_bp = Blueprint('recipes', __name__)
 
@@ -241,7 +242,13 @@ def create_recipe():
             is_published=data.get('is_published', False),
             is_featured=data.get('is_featured', False),
             user_id=user_id,
-            category_id=data.get('category_id')  # Keep for backward compatibility
+            category_id=data.get('category_id'),  # Keep for backward compatibility
+            # Add nutrition fields
+            calories_per_serving=data.get('nutrition', {}).get('calories_per_serving'),
+            protein=data.get('nutrition', {}).get('protein'),
+            carbs=data.get('nutrition', {}).get('carbs'),
+            fat=data.get('nutrition', {}).get('fat'),
+            fiber=data.get('nutrition', {}).get('fiber')
         )
         
         db.session.add(recipe)
@@ -260,6 +267,35 @@ def create_recipe():
             category = Category.query.get(data.get('category_id'))
             if category:
                 recipe.categories.append(category)
+        
+        # Handle ingredients
+        ingredients_data = data.get('ingredients', [])
+        for i, ingredient_data in enumerate(ingredients_data):
+            if ingredient_data.get('name') and ingredient_data.get('quantity'):
+                # Find or create ingredient
+                ingredient_name = ingredient_data['name'].strip()
+                ingredient = Ingredient.query.filter_by(name=ingredient_name).first()
+                
+                if not ingredient:
+                    # Create new ingredient
+                    ingredient = Ingredient(
+                        name=ingredient_name,
+                        unit=ingredient_data.get('unit', 'gram'),
+                        category='other'
+                    )
+                    db.session.add(ingredient)
+                    db.session.flush()  # Get ingredient ID
+                
+                # Create recipe ingredient relationship
+                recipe_ingredient = RecipeIngredient(
+                    recipe_id=recipe.id,
+                    ingredient_id=ingredient.id,
+                    quantity=float(ingredient_data['quantity']),
+                    unit=ingredient_data.get('unit', ingredient.unit),
+                    notes=ingredient_data.get('notes', ''),
+                    order=i
+                )
+                db.session.add(recipe_ingredient)
         
         db.session.commit()
         
@@ -290,11 +326,21 @@ def update_recipe(recipe_id):
         # Update fields
         updateable_fields = ['title', 'description', 'instructions', 'prep_time', 
                            'cook_time', 'total_time', 'servings', 'difficulty', 
-                           'image_url', 'is_published', 'is_featured', 'category_id']
+                           'image_url', 'is_published', 'is_featured', 'category_id',
+                           'calories_per_serving', 'protein', 'carbs', 'fat', 'fiber']
         
         for field in updateable_fields:
             if field in data:
                 setattr(recipe, field, data[field])
+        
+        # Handle nutrition data separately
+        if 'nutrition' in data:
+            nutrition = data['nutrition']
+            recipe.calories_per_serving = nutrition.get('calories_per_serving')
+            recipe.protein = nutrition.get('protein')
+            recipe.carbs = nutrition.get('carbs')
+            recipe.fat = nutrition.get('fat')
+            recipe.fiber = nutrition.get('fiber')
         
         # Handle multiple categories update
         if 'category_ids' in data:
@@ -312,6 +358,40 @@ def update_recipe(recipe_id):
                 category = Category.query.get(data['category_id'])
                 if category:
                     recipe.categories.append(category)
+        
+        # Handle ingredients update
+        if 'ingredients' in data:
+            # Remove existing ingredients
+            RecipeIngredient.query.filter_by(recipe_id=recipe.id).delete()
+            
+            # Add new ingredients
+            ingredients_data = data['ingredients']
+            for i, ingredient_data in enumerate(ingredients_data):
+                if ingredient_data.get('name') and ingredient_data.get('quantity'):
+                    # Find or create ingredient
+                    ingredient_name = ingredient_data['name'].strip()
+                    ingredient = Ingredient.query.filter_by(name=ingredient_name).first()
+                    
+                    if not ingredient:
+                        # Create new ingredient
+                        ingredient = Ingredient(
+                            name=ingredient_name,
+                            unit=ingredient_data.get('unit', 'gram'),
+                            category='other'
+                        )
+                        db.session.add(ingredient)
+                        db.session.flush()  # Get ingredient ID
+                    
+                    # Create recipe ingredient relationship
+                    recipe_ingredient = RecipeIngredient(
+                        recipe_id=recipe.id,
+                        ingredient_id=ingredient.id,
+                        quantity=float(ingredient_data['quantity']),
+                        unit=ingredient_data.get('unit', ingredient.unit),
+                        notes=ingredient_data.get('notes', ''),
+                        order=i
+                    )
+                    db.session.add(recipe_ingredient)
         
         # Update slug if title changed
         if 'title' in data:
@@ -409,7 +489,7 @@ def rate_recipe(recipe_id):
                     'average_rating': average_rating,
                     'rating_count': rating_count
                 }
-            }), 200
+            }, 200)
         else:
             # Create new rating
             rating = Rating(
@@ -434,7 +514,7 @@ def rate_recipe(recipe_id):
                     'average_rating': average_rating,
                     'rating_count': rating_count
                 }
-            }), 201
+            }, 201)
         
     except Exception as e:
         db.session.rollback()
@@ -650,3 +730,32 @@ def toggle_recipe_publish(recipe_id):
     except Exception as e:
         db.session.rollback()
         return jsonify({'message': 'Failed to toggle recipe status', 'error': str(e)}), 500
+
+@recipes_bp.route('/<int:recipe_id>/edit', methods=['GET'])
+@jwt_required()
+def get_recipe_for_edit(recipe_id):
+    """Get recipe details for editing - includes all data including ingredients"""
+    try:
+        user_id = int(get_jwt_identity())
+        user = User.query.get(user_id)
+        
+        # Get recipe with all relationships loaded
+        recipe = Recipe.query.options(
+            joinedload(Recipe.user),
+            joinedload(Recipe.categories)
+        ).get(recipe_id)
+        
+        if not recipe:
+            return jsonify({'message': 'Recipe not found'}), 404
+        
+        # Check permissions - only recipe owner or admin can edit
+        if recipe.user_id != user_id and user.role != 'admin':
+            return jsonify({'message': 'Insufficient permissions'}), 403
+        
+        return jsonify({
+            'message': 'Recipe details retrieved successfully',
+            'recipe': recipe.to_dict(include_details=True, current_user_id=user_id)
+        }), 200
+        
+    except Exception as e:
+        return jsonify({'message': 'Failed to get recipe details', 'error': str(e)}), 500

@@ -9,6 +9,8 @@ import {
   FaLock,
   FaGoogle,
   FaFacebook,
+  FaUtensils,
+  FaHeart,
 } from "react-icons/fa";
 import { useAuth } from "../contexts/AuthContext";
 import LoadingSpinner from "../components/common/LoadingSpinner";
@@ -57,7 +59,7 @@ const RegisterPage = () => {
         username: data.username,
         email: data.email,
         password: data.password,
-        role: "user", // Default role
+        role: data.role || "user", // Use selected role or default to user
         bio: "",
       };
 
@@ -132,11 +134,10 @@ const RegisterPage = () => {
                   <input
                     type="text"
                     placeholder="nowriafisda"
-                    className={`w-full px-12 py-3 font-brand text-black placeholder-gray-400 bg-gray-50 border rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-700 focus:border-transparent transition-all duration-300 group-hover:bg-white ${
-                      errors.username
+                    className={`w-full px-12 py-3 font-brand text-black placeholder-gray-400 bg-gray-50 border rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-700 focus:border-transparent transition-all duration-300 group-hover:bg-white ${errors.username
                         ? "border-red-500 bg-red-50"
                         : "border-gray-200 focus:bg-white"
-                    }`}
+                      }`}
                     {...register("username", {
                       required: "Username is required",
                       minLength: {
@@ -181,11 +182,10 @@ const RegisterPage = () => {
                   <input
                     type="email"
                     placeholder="nowriafisda@cookeasy.com"
-                    className={`w-full px-12 py-3 font-brand text-black placeholder-gray-400 bg-gray-50 border rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-700 focus:border-transparent transition-all duration-300 group-hover:bg-white ${
-                      errors.email
+                    className={`w-full px-12 py-3 font-brand text-black placeholder-gray-400 bg-gray-50 border rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-700 focus:border-transparent transition-all duration-300 group-hover:bg-white ${errors.email
                         ? "border-red-500 bg-red-50"
                         : "border-gray-200 focus:bg-white"
-                    }`}
+                      }`}
                     {...register("email", {
                       required: "Email is required",
                       pattern: {
@@ -216,6 +216,74 @@ const RegisterPage = () => {
                 )}
               </div>
 
+              {/* Role Selection Field */}
+              <div className="space-y-2">
+                <label className="block text-sm font-normal font-brand text-orange-600">
+                  Join as
+                </label>
+                <div className="grid grid-cols-2 gap-4">
+                  <label className="flex items-center cursor-pointer group p-4 border-2 border-gray-200 rounded-xl hover:border-orange-300 hover:bg-orange-50/20 transition-all duration-300 has-[:checked]:border-orange-500 has-[:checked]:bg-orange-50/30">
+                    <input
+                      type="radio"
+                      value="user"
+                      className="w-4 h-4 text-orange-700 bg-gray-100 border-gray-300 focus:ring-orange-700 focus:ring-2 transition-all duration-300"
+                      {...register("role", {
+                        required: "Please select your role",
+                      })}
+                      defaultChecked
+                    />
+                    <div className="ml-3 flex items-center">
+                      <FaHeart className="text-orange-400 mr-2 group-hover:text-orange-500 transition-colors duration-300" />
+                      <div>
+                        <span className="block text-sm font-medium text-orange-50 group-hover:text-orange-200 transition-colors duration-300">
+                          Food Lover
+                        </span>
+                        <span className="block text-xs text-orange-200 opacity-80">
+                          Discover amazing recipes
+                        </span>
+                      </div>
+                    </div>
+                  </label>
+                  <label className="flex items-center cursor-pointer group p-4 border-2 border-gray-200 rounded-xl hover:border-orange-300 hover:bg-orange-50/20 transition-all duration-300 has-[:checked]:border-orange-500 has-[:checked]:bg-orange-50/30">
+                    <input
+                      type="radio"
+                      value="chef"
+                      className="w-4 h-4 text-orange-700 bg-gray-100 border-gray-300 focus:ring-orange-700 focus:ring-2 transition-all duration-300"
+                      {...register("role", {
+                        required: "Please select your role",
+                      })}
+                    />
+                    <div className="ml-3 flex items-center">
+                      <FaUtensils className="text-orange-400 mr-2 group-hover:text-orange-500 transition-colors duration-300" />
+                      <div>
+                        <span className="block text-sm font-medium text-orange-50 group-hover:text-orange-200 transition-colors duration-300">
+                          Chef
+                        </span>
+                        <span className="block text-xs text-orange-200 opacity-80">
+                          Share your recipes
+                        </span>
+                      </div>
+                    </div>
+                  </label>
+                </div>
+                {errors.role && (
+                  <p className="text-red-500 text-sm font-medium flex items-center gap-1">
+                    <svg
+                      className="w-4 h-4"
+                      fill="currentColor"
+                      viewBox="0 0 20 20"
+                    >
+                      <path
+                        fillRule="evenodd"
+                        d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
+                        clipRule="evenodd"
+                      />
+                    </svg>
+                    {errors.role.message}
+                  </p>
+                )}
+              </div>
+
               {/* Password Field */}
               <div className="space-y-2">
                 <label className="block text-sm font-normal font-brand text-orange-600">
@@ -225,11 +293,10 @@ const RegisterPage = () => {
                   <input
                     type={showPassword ? "text" : "password"}
                     placeholder="Create a strong password"
-                    className={`w-full px-12 py-3 font-brand text-black placeholder-gray-400 bg-gray-50 border rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-700 focus:border-transparent transition-all duration-300 group-hover:bg-white ${
-                      errors.password
+                    className={`w-full px-12 py-3 font-brand text-black placeholder-gray-400 bg-gray-50 border rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-700 focus:border-transparent transition-all duration-300 group-hover:bg-white ${errors.password
                         ? "border-red-500 bg-red-50"
                         : "border-gray-200 focus:bg-white"
-                    }`}
+                      }`}
                     {...register("password", {
                       required: "Password is required",
                       minLength: {
@@ -276,11 +343,10 @@ const RegisterPage = () => {
                   <input
                     type={showConfirmPassword ? "text" : "password"}
                     placeholder="Confirm your password"
-                    className={`w-full px-12 py-3 font-brand text-black placeholder-gray-400 bg-gray-50 border rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-700 focus:border-transparent transition-all duration-300 group-hover:bg-white ${
-                      errors.confirmPassword
+                    className={`w-full px-12 py-3 font-brand text-black placeholder-gray-400 bg-gray-50 border rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-700 focus:border-transparent transition-all duration-300 group-hover:bg-white ${errors.confirmPassword
                         ? "border-red-500 bg-red-50"
                         : "border-gray-200 focus:bg-white"
-                    }`}
+                      }`}
                     {...register("confirmPassword", {
                       required: "Please confirm your password",
                       validate: (value) =>

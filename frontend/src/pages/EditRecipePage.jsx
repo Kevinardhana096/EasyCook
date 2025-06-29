@@ -119,7 +119,8 @@ const EditRecipePage = () => {
       setError(null);
 
       try {
-        const response = await apiClient.get(`/recipes/${id}`);
+        // Use the new edit endpoint to get complete recipe data including ingredients
+        const response = await apiClient.get(`/recipes/${id}/edit`);
         const recipeData = response.data.recipe;
 
         // Check if user can edit this recipe
@@ -135,6 +136,19 @@ const EditRecipePage = () => {
           recipeData.categories.map(cat => cat.id) :
           (recipeData.category_id ? [recipeData.category_id] : []);
 
+        // Prepare ingredients data - if empty, start with one empty ingredient
+        let ingredientsData = [];
+        if (recipeData.ingredients && recipeData.ingredients.length > 0) {
+          ingredientsData = recipeData.ingredients.map(ing => ({
+            name: ing.ingredient_name || ing.name || "",
+            quantity: ing.quantity || "",
+            unit: ing.unit || "gram",
+            notes: ing.notes || ""
+          }));
+        } else {
+          ingredientsData = [{ name: "", quantity: "", unit: "gram", notes: "" }];
+        }
+
         reset({
           title: recipeData.title || "",
           description: recipeData.description || "",
@@ -147,17 +161,13 @@ const EditRecipePage = () => {
           image_url: recipeData.image_url || "",
           instructions: recipeData.instructions || "",
           tips: recipeData.tips || "",
-          ingredients:
-            recipeData.ingredients && recipeData.ingredients.length > 0
-              ? recipeData.ingredients
-              : [{ name: "", quantity: "", unit: "gram", notes: "" }],
+          ingredients: ingredientsData,
           nutrition: {
-            calories_per_serving:
-              recipeData.nutrition?.calories_per_serving || "",
-            protein: recipeData.nutrition?.protein || "",
-            carbs: recipeData.nutrition?.carbs || "",
-            fat: recipeData.nutrition?.fat || "",
-            fiber: recipeData.nutrition?.fiber || "",
+            calories_per_serving: recipeData.calories_per_serving || recipeData.nutrition?.calories_per_serving || "",
+            protein: recipeData.protein || recipeData.nutrition?.protein || "",
+            carbs: recipeData.carbs || recipeData.nutrition?.carbs || "",
+            fat: recipeData.fat || recipeData.nutrition?.fat || "",
+            fiber: recipeData.fiber || recipeData.nutrition?.fiber || "",
           },
         });
 
@@ -165,6 +175,8 @@ const EditRecipePage = () => {
         if (recipeData.image_url) {
           setImagePreview(recipeData.image_url);
         }
+
+        console.log("✅ Recipe loaded successfully with ingredients:", ingredientsData);
       } catch (err) {
         console.error("Failed to load recipe:", err);
         if (err.response?.status === 404) {
@@ -509,8 +521,8 @@ const EditRecipePage = () => {
                   type="button"
                   onClick={() => setActiveTab("basic")}
                   className={`tab tab-lg flex-1 transition-all duration-200 rounded-md ${activeTab === "basic"
-                      ? "bg-orange-50 text-orange-800 shadow-md"
-                      : "text-orange-50 hover:bg-orange-50 hover:text-orange-800"
+                    ? "bg-orange-50 text-orange-800 shadow-md"
+                    : "text-orange-50 hover:bg-orange-50 hover:text-orange-800"
                     }
                 `}
                 >
@@ -521,8 +533,8 @@ const EditRecipePage = () => {
                   type="button"
                   onClick={() => setActiveTab("ingredients")}
                   className={`tab tab-lg flex-1 transition-all duration-200 rounded-md ${activeTab === "ingredients"
-                      ? "bg-orange-50 text-orange-800 shadow-md"
-                      : "text-orange-50 hover:bg-orange-50 hover:text-orange-800"
+                    ? "bg-orange-50 text-orange-800 shadow-md"
+                    : "text-orange-50 hover:bg-orange-50 hover:text-orange-800"
                     }
                 `}
                 >
@@ -533,8 +545,8 @@ const EditRecipePage = () => {
                   type="button"
                   onClick={() => setActiveTab("instructions")}
                   className={`tab tab-lg flex-1 transition-all duration-200 rounded-md ${activeTab === "instructions"
-                      ? "bg-orange-50 text-orange-800 shadow-md"
-                      : "text-orange-50 hover:bg-orange-50 hover:text-orange-800"
+                    ? "bg-orange-50 text-orange-800 shadow-md"
+                    : "text-orange-50 hover:bg-orange-50 hover:text-orange-800"
                     }
                 `}
                 >
@@ -545,8 +557,8 @@ const EditRecipePage = () => {
                   type="button"
                   onClick={() => setActiveTab("nutrition")}
                   className={`tab tab-lg flex-1 transition-all duration-200 rounded-md ${activeTab === "nutrition"
-                      ? "bg-orange-50 text-orange-800 shadow-md"
-                      : "text-orange-50 hover:bg-orange-50 hover:text-orange-800"
+                    ? "bg-orange-50 text-orange-800 shadow-md"
+                    : "text-orange-50 hover:bg-orange-50 hover:text-orange-800"
                     }`}
                 >
                   <FaEye className="mr-2" />
@@ -753,7 +765,12 @@ const EditRecipePage = () => {
                 {activeTab === "ingredients" && (
                   <div className="space-y-6 font-brand">
                     <div className="flex items-center justify-between">
-                      <h3 className="text-2xl font-medium text-orange-800">Ingredients</h3>
+                      <div>
+                        <h3 className="text-2xl font-medium text-orange-800">Ingredients</h3>
+                        <p className="text-sm text-gray-600 mt-1">
+                          ✨ Current ingredients are loaded automatically. You can edit, remove, or add new ones.
+                        </p>
+                      </div>
                       <button
                         type="button"
                         onClick={() =>
@@ -771,71 +788,107 @@ const EditRecipePage = () => {
                       </button>
                     </div>
 
-                    <div className="space-y-4">
-                      {ingredientFields.map((field, index) => (
-                        <div
-                          key={field.id}
-                          className="grid grid-cols-1 gap-4 p-4 border border-gray-200 rounded-lg md:grid-cols-12"
-                        >
-                          {/* Ingredient Name */}
-                          <div className="form-control md:col-span-5">
-                            <input
-                              {...register(`ingredients.${index}.name`, {
-                                required: "Ingredient name is required",
-                              })}
-                              type="text"
-                              placeholder="e.g., All-purpose flour"
-                              className="input input-bordered  bg-orange-50 text-black"
-                            />
-                          </div>
-
-                          {/* Quantity */}
-                          <div className="form-control md:col-span-2">
-                            <input
-                              {...register(`ingredients.${index}.quantity`)}
-                              type="text"
-                              placeholder="2"
-                              className="input input-bordered  bg-orange-50 text-black"
-                            />
-                          </div>
-
-                          {/* Unit */}
-                          <div className="form-control md:col-span-2">
-                            <select
-                              {...register(`ingredients.${index}.unit`)}
-                              className="select select-bordered  bg-orange-50 text-black"
-                            >
-                              {unitOptions.map((unit) => (
-                                <option key={unit} value={unit}>
-                                  {unit}
-                                </option>
-                              ))}
-                            </select>
-                          </div>
-
-                          {/* Notes */}
-                          <div className="form-control md:col-span-2">
-                            <input
-                              {...register(`ingredients.${index}.notes`)}
-                              type="text"
-                              placeholder="optional notes"
-                              className="input input-bordered  bg-orange-50 text-black"
-                            />
-                          </div>
-
-                          {/* Remove Button */}
-                          <div className="form-control md:col-span-1">
-                            <button
-                              type="button"
-                              onClick={() => removeIngredient(index)}
-                              className="btn btn-circle btn-error btn-sm bg-red-300 text-red-500"
-                              disabled={ingredientFields.length === 1}
-                            >
-                              <FaMinus />
-                            </button>
-                          </div>
+                    {/* Instructions */}
+                    <div className="p-4 bg-blue-50 border-l-4 border-blue-400 rounded-r-lg">
+                      <div className="flex items-center">
+                        <div className="flex-shrink-0">
+                          <span className="text-blue-400">💡</span>
                         </div>
-                      ))}
+                        <div className="ml-3">
+                          <p className="text-sm text-blue-700">
+                            <strong>Edit Tips:</strong> Existing ingredients will appear below.
+                            You can modify any field, remove items with the ❌ button, or add new ingredients.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="space-y-4">
+                      {ingredientFields.map((field, index) => {
+                        const watchedName = watch(`ingredients.${index}.name`);
+                        const isExisting = recipe?.ingredients?.some(ing =>
+                          ing.ingredient_name === watchedName || ing.name === watchedName
+                        );
+
+                        return (
+                          <div
+                            key={field.id}
+                            className={`grid grid-cols-1 gap-4 p-4 border rounded-lg md:grid-cols-12 ${isExisting ? 'border-green-300 bg-green-50/50' : 'border-gray-200'
+                              }`}
+                          >
+                            {/* Status Badge */}
+                            <div className="md:col-span-12 mb-2">
+                              {isExisting ? (
+                                <span className="inline-flex items-center px-2 py-1 text-xs font-medium text-green-800 bg-green-100 rounded-full">
+                                  📝 Existing ingredient
+                                </span>
+                              ) : (
+                                <span className="inline-flex items-center px-2 py-1 text-xs font-medium text-blue-800 bg-blue-100 rounded-full">
+                                  ✨ New ingredient
+                                </span>
+                              )}
+                            </div>
+
+                            {/* Ingredient Name */}
+                            <div className="form-control md:col-span-5">
+                              <input
+                                {...register(`ingredients.${index}.name`, {
+                                  required: "Ingredient name is required",
+                                })}
+                                type="text"
+                                placeholder="e.g., All-purpose flour"
+                                className="input input-bordered bg-orange-50 text-black"
+                              />
+                            </div>
+
+                            {/* Quantity */}
+                            <div className="form-control md:col-span-2">
+                              <input
+                                {...register(`ingredients.${index}.quantity`)}
+                                type="text"
+                                placeholder="2"
+                                className="input input-bordered  bg-orange-50 text-black"
+                              />
+                            </div>
+
+                            {/* Unit */}
+                            <div className="form-control md:col-span-2">
+                              <select
+                                {...register(`ingredients.${index}.unit`)}
+                                className="select select-bordered  bg-orange-50 text-black"
+                              >
+                                {unitOptions.map((unit) => (
+                                  <option key={unit} value={unit}>
+                                    {unit}
+                                  </option>
+                                ))}
+                              </select>
+                            </div>
+
+                            {/* Notes */}
+                            <div className="form-control md:col-span-2">
+                              <input
+                                {...register(`ingredients.${index}.notes`)}
+                                type="text"
+                                placeholder="optional notes"
+                                className="input input-bordered  bg-orange-50 text-black"
+                              />
+                            </div>
+
+                            {/* Remove Button */}
+                            <div className="form-control md:col-span-1">
+                              <button
+                                type="button"
+                                onClick={() => removeIngredient(index)}
+                                className="btn btn-circle btn-error btn-sm bg-red-300 text-red-500"
+                                disabled={ingredientFields.length === 1}
+                              >
+                                <FaMinus />
+                              </button>
+                            </div>
+                          </div>
+                        );
+                      })}
                     </div>
                   </div>
                 )}
