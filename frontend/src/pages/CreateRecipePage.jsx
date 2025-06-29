@@ -335,10 +335,11 @@ const CreateRecipePage = () => {
               <div className="flex flex-wrap justify-center gap-2 lg:justify-start">
                 <button
                   type="button"
-                  className={`relative px-4 py-2 rounded-lg font-medium transition-all duration-200 ${activeTab === "basic"
-                    ? "bg-orange-50 text-orange-800"
-                    : "text-orange-50 hover:bg-orange-50 hover:text-orange-800"
-                    }`}
+                  className={`relative px-4 py-2 rounded-lg font-medium transition-all duration-200 ${
+                    activeTab === "basic"
+                      ? "bg-orange-50 text-orange-800"
+                      : "text-orange-50 hover:bg-orange-50 hover:text-orange-800"
+                  }`}
                   onClick={() => setActiveTab("basic")}
                 >
                   <FaEdit className="mr-2 text-lg inline-block" />
@@ -350,10 +351,11 @@ const CreateRecipePage = () => {
                 <button
                   type="button"
                   onClick={() => setActiveTab("ingredients")}
-                  className={`relative px-4 py-2 rounded-lg font-medium transition-all duration-200 ${activeTab === "ingredients"
-                    ? "bg-orange-50 text-orange-800"
-                    : "text-orange-50 hover:bg-orange-50 hover:text-orange-800"
-                    }`}
+                  className={`relative px-4 py-2 rounded-lg font-medium transition-all duration-200 ${
+                    activeTab === "ingredients"
+                      ? "bg-orange-50 text-orange-800"
+                      : "text-orange-50 hover:bg-orange-50 hover:text-orange-800"
+                  }`}
                 >
                   <span className="flex items-center gap-2">
                     <FaList className="text-lg" />
@@ -366,10 +368,11 @@ const CreateRecipePage = () => {
                 <button
                   type="button"
                   onClick={() => setActiveTab("instructions")}
-                  className={`relative px-4 py-2 rounded-lg font-medium transition-all duration-200 ${activeTab === "instructions"
-                    ? "bg-orange-50 text-orange-800"
-                    : "text-orange-50 hover:bg-orange-50 hover:text-orange-800"
-                    }`}
+                  className={`relative px-4 py-2 rounded-lg font-medium transition-all duration-200 ${
+                    activeTab === "instructions"
+                      ? "bg-orange-50 text-orange-800"
+                      : "text-orange-50 hover:bg-orange-50 hover:text-orange-800"
+                  }`}
                 >
                   <span className="flex items-center gap-2">
                     <FaUtensils className="text-lg" />
@@ -382,10 +385,11 @@ const CreateRecipePage = () => {
                 <button
                   type="button"
                   onClick={() => setActiveTab("nutrition")}
-                  className={`relative px-4 py-2 rounded-lg font-medium transition-all duration-200 ${activeTab === "nutrition"
-                    ? "bg-orange-50 text-orange-800"
-                    : "text-orange-50 hover:bg-orange-50 hover:text-orange-800"
-                    }`}
+                  className={`relative px-4 py-2 rounded-lg font-medium transition-all duration-200 ${
+                    activeTab === "nutrition"
+                      ? "bg-orange-50 text-orange-800"
+                      : "text-orange-50 hover:bg-orange-50 hover:text-orange-800"
+                  }`}
                 >
                   <span className="flex items-center gap-2">
                     <FaUsers className="text-lg" />
@@ -423,8 +427,9 @@ const CreateRecipePage = () => {
                         <input
                           type="text"
                           placeholder="Title Here"
-                          className={`recipe-input ${errors.title ? "border-red-400" : ""
-                            }`}
+                          className={`recipe-input text-black ${
+                            errors.title ? "border-red-400" : ""
+                          }`}
                           {...register("title", {
                             required: "Recipe title is required",
                             minLength: {
@@ -450,8 +455,9 @@ const CreateRecipePage = () => {
                         </label>
                         <textarea
                           placeholder="Describe your recipe in here"
-                          className={`recipe-textarea h-32 ${errors.description ? "border-red-400" : ""
-                            }`}
+                          className={`recipe-textarea text-black h-32 ${
+                            errors.description ? "border-red-400" : ""
+                          }`}
                           {...register("description", {
                             required: "Description is required",
                             minLength: {
@@ -469,8 +475,8 @@ const CreateRecipePage = () => {
                         )}
                       </div>
 
-                      {/* Category & Difficulty */}
                       <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                        {/* Categories - Tetap di kiri */}
                         <div className="form-control">
                           <label className="label">
                             <span className="flex items-center text-lg font-semibold text-orange-800">
@@ -486,7 +492,8 @@ const CreateRecipePage = () => {
                                     className="checkbox checkbox-sm border-orange-300"
                                     value={category.id}
                                     {...register("category_ids", {
-                                      required: "Please select at least one category",
+                                      required:
+                                        "Please select at least one category",
                                     })}
                                   />
                                   <span className="text-sm text-orange-800">
@@ -504,72 +511,109 @@ const CreateRecipePage = () => {
                           )}
                         </div>
 
-                        <div className="form-control">
-                          <label className="label">
-                            <span className="flex items-center text-lg font-semibold text-orange-800">
-                              Difficulty
-                            </span>
-                          </label>
-                          <select
-                            className="recipe-select"
-                            {...register("difficulty")}
-                          >
-                            {difficultyOptions.map((difficulty) => (
-                              <option key={difficulty} value={difficulty}>
-                                {difficulty === "Easy"
-                                  ? "🟢 Easy"
-                                  : difficulty === "Medium"
+                        {/* Difficulty, Prep Time, Cook Time, Servings - dalam 1 kolom di kanan */}
+                        <div className="flex flex-col gap-6">
+                          {/* Difficulty */}
+                          <div className="form-control">
+                            <label className="label">
+                              <span className="flex items-center text-lg font-semibold text-orange-800">
+                                Difficulty
+                              </span>
+                            </label>
+                            <select
+                              className="recipe-select text-black"
+                              {...register("difficulty")}
+                            >
+                              {difficultyOptions.map((difficulty) => (
+                                <option key={difficulty} value={difficulty}>
+                                  {difficulty === "Easy"
+                                    ? "🟢 Easy"
+                                    : difficulty === "Medium"
                                     ? "🟡 Medium"
                                     : "🔴 Hard"}{" "}
-                                {difficulty}
-                              </option>
-                            ))}
-                          </select>
-                        </div>
-                      </div>
+                                  {difficulty}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
 
-                      {/* Timing & Servings */}
-                      <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-                        <div className="form-control">
-                          <label className="label">
-                            <span className="flex items-center font-semibold text-orange-800">
-                              Prep Time (min)
-                            </span>
-                          </label>
-                          <input
-                            type="number"
-                            placeholder="15"
-                            className="recipe-input"
-                            {...register("prep_time", { min: 0 })}
-                          />
-                        </div>
+                          {/* Prep Time */}
+                          <div className="form-control">
+                            <label className="label">
+                              <span className="text-sm font-medium text-orange-800">
+                                Prep Time (min)
+                              </span>
+                            </label>
+                            <input
+                              type="number"
+                              placeholder="e.g. 10"
+                              className={`recipe-input text-black ${
+                                errors.prep_time ? "border-red-400" : ""
+                              }`}
+                              {...register("prep_time", {
+                                required: "Prep time is required",
+                                min: { value: 1, message: "At least 1 minute" },
+                              })}
+                            />
+                            {errors.prep_time && (
+                              <p className="text-sm text-red-500 mt-1">
+                                {errors.prep_time.message}
+                              </p>
+                            )}
+                          </div>
 
-                        <div className="form-control">
-                          <label className="label">
-                            <span className="flex items-center font-semibold text-orange-800">
-                              Cook Time (min)
-                            </span>
-                          </label>
-                          <input
-                            type="number"
-                            placeholder="30"
-                            className="recipe-input"
-                            {...register("cook_time", { min: 0 })}
-                          />
-                        </div>
+                          {/* Cook Time */}
+                          <div className="form-control">
+                            <label className="label">
+                              <span className="text-sm font-medium text-orange-800">
+                                Cook Time (min)
+                              </span>
+                            </label>
+                            <input
+                              type="number"
+                              placeholder="e.g. 15"
+                              className={`recipe-input text-black ${
+                                errors.cook_time ? "border-red-400" : ""
+                              }`}
+                              {...register("cook_time", {
+                                required: "Cook time is required",
+                                min: { value: 1, message: "At least 1 minute" },
+                              })}
+                            />
+                            {errors.cook_time && (
+                              <p className="text-sm text-red-500 mt-1">
+                                {errors.cook_time.message}
+                              </p>
+                            )}
+                          </div>
 
-                        <div className="form-control">
-                          <label className="label">
-                            <span className="flex items-center font-semibold text-orange-800">
-                              Servings
-                            </span>
-                          </label>
-                          <input
-                            type="number"
-                            placeholder="4"
-                            className="recipe-input"
-                            {...register("servings", { min: 1, max: 20 })}
-                          />
+                          {/* Servings */}
+                          <div className="form-control">
+                            <label className="label">
+                              <span className="text-sm font-medium text-orange-800">
+                                Servings
+                              </span>
+                            </label>
+                            <input
+                              type="number"
+                              placeholder="e.g. 2"
+                              className={`recipe-input text-black ${
+                                errors.servings ? "border-red-400" : ""
+                              }`}
+                              {...register("servings", {
+                                required: "Servings is required",
+                                min: {
+                                  value: 1,
+                                  message: "At least 1 serving",
+                                },
+                              })}
+                            />
+                            {errors.servings && (
+                              <p className="text-sm text-red-500 mt-1">
+                                {errors.servings.message}
+                              </p>
+                            )}
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -627,7 +671,7 @@ const CreateRecipePage = () => {
                         <input
                           type="url"
                           placeholder="Or paste image URL..."
-                          className="text-sm recipe-input"
+                          className="text-sm text-black recipe-input"
                           {...register("image_url")}
                           onChange={(e) => {
                             if (e.target.value) {
@@ -694,10 +738,11 @@ const CreateRecipePage = () => {
                               <input
                                 type="text"
                                 placeholder="e.g., Chicken breast, Onion, Garlic..."
-                                className={`recipe-input ${errors.ingredients?.[index]?.name
-                                  ? "border-red-400"
-                                  : ""
-                                  }`}
+                                className={`recipe-input ${
+                                  errors.ingredients?.[index]?.name
+                                    ? "border-red-400"
+                                    : ""
+                                }`}
                                 {...register(`ingredients.${index}.name`, {
                                   required: "Ingredient name is required",
                                 })}
@@ -719,10 +764,11 @@ const CreateRecipePage = () => {
                                 type="number"
                                 placeholder="250"
                                 step="0.1"
-                                className={`recipe-input ${errors.ingredients?.[index]?.quantity
-                                  ? "border-red-400"
-                                  : ""
-                                  }`}
+                                className={`recipe-input ${
+                                  errors.ingredients?.[index]?.quantity
+                                    ? "border-red-400"
+                                    : ""
+                                }`}
                                 {...register(`ingredients.${index}.quantity`, {
                                   required: "Quantity is required",
                                 })}
@@ -841,8 +887,9 @@ const CreateRecipePage = () => {
                       <div className="relative">
                         <textarea
                           placeholder="Write your cooking instructions here ..."
-                          className={`recipe-textarea h-80 ${errors.instructions ? "border-red-400" : ""
-                            }`}
+                          className={`recipe-textarea h-80 ${
+                            errors.instructions ? "border-red-400" : ""
+                          }`}
                           {...register("instructions", {
                             required: "Instructions are required",
                             minLength: {
@@ -1081,10 +1128,10 @@ const CreateRecipePage = () => {
                           {activeTab === "basic"
                             ? "Basic Info"
                             : activeTab === "ingredients"
-                              ? "Ingredients"
-                              : activeTab === "instructions"
-                                ? "Instructions"
-                                : "Nutrition"}
+                            ? "Ingredients"
+                            : activeTab === "instructions"
+                            ? "Instructions"
+                            : "Nutrition"}
                         </span>
                         {watch("title") && (
                           <span className="px-3 py-1 text-sm text-green-600 bg-green-100 rounded-full">
@@ -1187,9 +1234,7 @@ const CreateRecipePage = () => {
                     </span>
                     <span
                       className={
-                        watch("ingridients")
-                          ? "text-green-600 font-medium"
-                          : ""
+                        watch("ingridients") ? "text-green-600 font-medium" : ""
                       }
                     >
                       Ingredients

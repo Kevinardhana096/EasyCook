@@ -244,32 +244,7 @@ const LoginPage = () => {
                 )}
               </button>
             </form>
-
-            {/* Social Login with Enhanced Design */}
-            <div className="mt-8">
-              <div className="relative">
-                <div className="absolute inset-0 flex items-center">
-                  <div className="w-full border-t border-gray-200"></div>
-                </div>
-                <div className="relative flex justify-center text-sm">
-                  <span className="px-4 rounded-xl bg-orange-50 text-orange-800 font-medium font-brand text-xs">
-                    Or continue with
-                  </span>
-                </div>
-              </div>
-
-              <div className="mt-6 grid grid-cols-2 gap-4">
-                <button className="flex items-center justify-center px-4 py-3 border border-gray-200 rounded-xl shadow-sm hover:shadow-md bg-white hover:bg-gray-100 transition-all duration-300 group">
-                  <FaGoogle className="text-red-500 mr-2 group-hover:scale-110 transition-transform duration-300" />
-                  <span className="text-gray-700 font-medium">Google</span>
-                </button>
-                <button className="flex items-center justify-center px-4 py-3 border border-gray-200 rounded-xl shadow-sm hover:shadow-md bg-white hover:bg-gray-100 transition-all duration-300 group">
-                  <FaFacebook className="text-blue-600 mr-2 group-hover:scale-110 transition-transform duration-300" />
-                  <span className="text-gray-700 font-medium">Facebook</span>
-                </button>
-              </div>
-            </div>
-
+            
             {/* Sign Up Link with Enhanced Design */}
             <div className="text-center mt-6 pt-6 border-t border-gray-100">
               <p className="text-orange-50 font-brand text-sm">
